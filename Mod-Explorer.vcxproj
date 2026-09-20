@@ -18,6 +18,20 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Host\meDMUIClient.cpp" />
+    <ClCompile Include="Source\meError.cpp" />
+    <ClCompile Include="Source\meMain.cpp" />
+    <ClCompile Include="Source\mePlugin.cpp" />
+    <ClCompile Include="Source\meUtils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\Host\meDMUIClient.h" />
+    <ClInclude Include="Source\meError.h" />
+    <ClInclude Include="Source\mePlugin.h" />
+    <ClInclude Include="Source\mePluginInfo.h" />
+    <ClInclude Include="Source\meUtils.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -74,6 +88,7 @@
     <OutDir>$(SolutionDir).Bin\f4se\plugins\</OutDir>
     <IntDir>$(SolutionDir).LinkConf\$(ShortProjectName)\$(Platform)\$(Configuration)\</IntDir>
     <TargetName>pme</TargetName>
+    <IncludePath>$(SolutionDir)Depends\clib\include;$(SolutionDir)Depends\spdlog\include;$(SolutionDir)Depends\toml11\single_include;$(SolutionDir)Depends\clib\lib\commonlib-shared\include;$(SolutionDir)Depends\detours;$(SolutionDir)Depends\imgui;$(SolutionDir)Depends\clib\lib\dearmoddingui-api\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -130,11 +145,18 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;MODEXPLORER_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;MODEXPLORER_EXPORTS;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;SPDLOG_COMPILED_LIB;SPDLOG_USE_STD_FORMAT;SPDLOG_WCHAR_TO_UTF8_SUPPORT;COMMONLIB_OPTION_TOML;COMMONLIB_RUNTIMECOUNT=3;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>F4SE\Impl\PCH.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpplatest</LanguageStandard>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <ForcedIncludeFiles>F4SE\Impl\PCH.h</ForcedIncludeFiles>
+      <DisableSpecificWarnings>4200</DisableSpecificWarnings>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -142,7 +164,12 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalDependencies>commonlibf4_vc22.lib;commonlib-shared_vc22.lib;spdlog_vc22.lib;Advapi32.lib;Bcrypt.lib;dxgi.lib;d3d11.lib;d3dcompiler.lib;ws2_32.lib;version.lib;Dbghelp.lib;shlwapi.lib;imgui.lib;detours_vc22.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir).Lib\</AdditionalLibraryDirectories>
     </Link>
+    <PostBuildEvent>
+      <Command>powershell -ExecutionPolicy Bypass -File "$(SolutionDir)debug.ps1"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

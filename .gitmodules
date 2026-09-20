@@ -1,0 +1,12 @@
+[submodule "Depends/clib"]
+	path = Depends/clib
+	url = https://github.com/Dear-Modding-FO4/commonlibf4.git
+[submodule "Depends/toml11"]
+	path = Depends/toml11
+	url = https://github.com/ToruNiina/toml11.git
+[submodule "Depends/spdlog"]
+	path = Depends/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "Depends/detours"]
+	path = Depends/detours
+	url = https://github.com/Nukem9/detours.git

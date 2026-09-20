@@ -1,0 +1,1 @@
+Copy-Item -Path ".Bin\f4se\plugins\*" -Filter "pme.*" -Destination "G:\SteamLibrary\steamapps\common\Fallout 4\Data\f4se\plugins\" -Force

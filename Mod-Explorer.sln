@@ -4,6 +4,22 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.10.36631.13
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Mod-Explorer", "Mod-Explorer.vcxproj", "{A0A86363-0A95-48B3-A5C9-043CF241CB42}"
+	ProjectSection(ProjectDependencies) = postProject
+		{06E30C65-D79A-4FEC-8A60-B36D907E6601} = {06E30C65-D79A-4FEC-8A60-B36D907E6601}
+		{3317C484-5B56-43BC-A2DE-37A001905E7A} = {3317C484-5B56-43BC-A2DE-37A001905E7A}
+		{4B0C9A46-C909-40AB-929A-A3207E7F7908} = {4B0C9A46-C909-40AB-929A-A3207E7F7908}
+		{FAF05090-9B74-4FBF-8D3E-F1E2D9EA032F} = {FAF05090-9B74-4FBF-8D3E-F1E2D9EA032F}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "commonlib-shared_vc22", "Depends\commonlib-shared_vc22.vcxproj", "{4B0C9A46-C909-40AB-929A-A3207E7F7908}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "commonlibf4_vc22", "Depends\commonlibf4_vc22.vcxproj", "{FAF05090-9B74-4FBF-8D3E-F1E2D9EA032F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spdlog_vc22", "Depends\spdlog_vc22.vcxproj", "{3317C484-5B56-43BC-A2DE-37A001905E7A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "detours_vc22", "Depends\detours_vc22.vcxproj", "{06E30C65-D79A-4FEC-8A60-B36D907E6601}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dmui_vc22", "Depends\dmui_vc22.vcxproj", "{FD8C3735-454D-4B3C-94A5-209EA72D4F73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,6 +28,16 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{A0A86363-0A95-48B3-A5C9-043CF241CB42}.Release|x64.ActiveCfg = Release|x64
 		{A0A86363-0A95-48B3-A5C9-043CF241CB42}.Release|x64.Build.0 = Release|x64
+		{4B0C9A46-C909-40AB-929A-A3207E7F7908}.Release|x64.ActiveCfg = Release|x64
+		{4B0C9A46-C909-40AB-929A-A3207E7F7908}.Release|x64.Build.0 = Release|x64
+		{FAF05090-9B74-4FBF-8D3E-F1E2D9EA032F}.Release|x64.ActiveCfg = Release|x64
+		{FAF05090-9B74-4FBF-8D3E-F1E2D9EA032F}.Release|x64.Build.0 = Release|x64
+		{3317C484-5B56-43BC-A2DE-37A001905E7A}.Release|x64.ActiveCfg = Release|x64
+		{3317C484-5B56-43BC-A2DE-37A001905E7A}.Release|x64.Build.0 = Release|x64
+		{06E30C65-D79A-4FEC-8A60-B36D907E6601}.Release|x64.ActiveCfg = Release|x64
+		{06E30C65-D79A-4FEC-8A60-B36D907E6601}.Release|x64.Build.0 = Release|x64
+		{FD8C3735-454D-4B3C-94A5-209EA72D4F73}.Release|x64.ActiveCfg = Release|x64
+		{FD8C3735-454D-4B3C-94A5-209EA72D4F73}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
