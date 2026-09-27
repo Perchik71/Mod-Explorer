@@ -220,8 +220,6 @@ std::shared_ptr<dmui::Texture> dmui::TextureLoader::LoadFromResource(Format a_fo
 		(!a_section || !strlen(a_section)) ? MAKEINTRESOURCEA(10) /* RC_DATA */ : a_section);
 	if (!hResource) return nullptr;
 
-	REX::INFO("gfhfghf");
-
 	auto hMemory = LoadResource(hmod, hResource);
 	if (!hMemory) return nullptr;
 
@@ -230,8 +228,6 @@ std::shared_ptr<dmui::Texture> dmui::TextureLoader::LoadFromResource(Format a_fo
 
 	auto result = LoadFromStream(LockResource(hMemory), dataSize, a_format);
 	FreeResource(hResource);
-
-	REX::INFO("sdfs");
 
 	return result;
 }
