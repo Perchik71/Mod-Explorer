@@ -30,6 +30,7 @@
     <ClCompile Include="Source\Host\TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Resources\resource.h" />
     <ClInclude Include="Source\Host\DDSTextureLoader11.h" />
     <ClInclude Include="Source\Host\WICTextureLoader11.h" />
     <ClInclude Include="Source\meDataStorage.h" />
@@ -39,6 +40,19 @@
     <ClInclude Include="Source\mePluginInfo.h" />
     <ClInclude Include="Source\meUtils.h" />
     <ClInclude Include="Source\Host\TextureLoader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources\Mod-Explorer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\alchemy.png" />
+    <Image Include="Resources\ammo.png" />
+    <Image Include="Resources\armor.png" />
+    <Image Include="Resources\book.png" />
+    <Image Include="Resources\key.png" />
+    <Image Include="Resources\misc.png" />
+    <Image Include="Resources\note.png" />
+    <Image Include="Resources\weapon.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

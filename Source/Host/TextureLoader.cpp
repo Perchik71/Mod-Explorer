@@ -1,3 +1,4 @@
+#include "../mePlugin.h"
 #include "TextureLoader.h"
 
 #include <REX/REX.h>
@@ -214,18 +215,23 @@ std::shared_ptr<dmui::Texture> dmui::TextureLoader::LoadFromFile(const std::stri
 std::shared_ptr<dmui::Texture> dmui::TextureLoader::LoadFromResource(Format a_format,
 	int32_t a_resourceId, const char* a_section) noexcept
 {
-	auto hResource = FindResourceA(nullptr, MAKEINTRESOURCEA(a_resourceId),
+	auto hmod = reinterpret_cast<HMODULE>(mePlugin::GetSingleton()->GetHandleCurrentDll());
+	auto hResource = FindResourceA(hmod, MAKEINTRESOURCEA(a_resourceId), 
 		(!a_section || !strlen(a_section)) ? MAKEINTRESOURCEA(10) /* RC_DATA */ : a_section);
 	if (!hResource) return nullptr;
 
-	auto hMemory = LoadResource(nullptr, hResource);
+	REX::INFO("gfhfghf");
+
+	auto hMemory = LoadResource(hmod, hResource);
 	if (!hMemory) return nullptr;
 
-	auto dataSize = SizeofResource(nullptr, hResource);
+	auto dataSize = SizeofResource(hmod, hResource);
 	if (!dataSize) return nullptr;
 
 	auto result = LoadFromStream(LockResource(hMemory), dataSize, a_format);
 	FreeResource(hResource);
+
+	REX::INFO("sdfs");
 
 	return result;
 }

@@ -2,6 +2,7 @@
 #include "../meUtils.h"
 #include "../mePluginInfo.h"
 #include "../meDataStorage.h"
+#include "../../Resources/resource.h"
 
 #include <RE/S/Setting.h>
 #include <atomic>
@@ -42,6 +43,11 @@ namespace dmui
 {
 	static void Image(Client* a_client, const std::shared_ptr<dmui::Texture> a_texture, float a_w, float a_h) noexcept
 	{
+		if (!a_client || !a_texture)
+			return;
+
+		a_texture->SendOnceDmuiRequest(a_client);
+
 		if (a_w == -1.f)
 			a_w = static_cast<float>(a_texture->GetWidth());
 
@@ -228,21 +234,6 @@ void meDMUIClient::RendererGeneralPage()
 						dmui::ui::TableFlags::kScrollY |
 						dmui::ui::TableFlags::kSizingFixedFit;
 
-					textureArmor->SendOnceDmuiRequest(dmuiPlatform);
-					dmui::Image(dmuiPlatform, textureArmor, 64.f, 64.f);
-					
-					//{
-					//	auto opt = dmuiPlatform->ImportD3D11Image(textureArmor->resource, textureArmor->width, textureArmor->height);
-					//	if (opt.has_value())
-					//		dmuiPlatform->DrawImage(opt->Handle(), options);
-					//	else
-					//		REX::INFO("dsfsdfsd");
-					//}
-					//else REX::INFO("ghf");
-
-					//if (!DMUI_DrawImage(uiClient->client.get(), , options))
-					//	DMUI_LoadImage(dmuiPlatform, textureArmor, );
-
 					if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body.plugininfo", 2, flags))
 					{
 						// Setup columns the header row
@@ -256,23 +247,53 @@ void meDMUIClient::RendererGeneralPage()
 							dmui::ui::TableNextRow();
 							if (dmui::ui::TableNextColumn())
 							{
-								
-								//
-							//	const auto glyph = dmuiPlatform->ResolveIconGlyph(
-							//		"Display Settings", nullptr, "Graphics");
-
-							//	dmui::
-
-								//dmuiPlatform->
-
-								dmui::ui::TextWrapped("Test 1");
+								switch (itemType)
+								{
+								case meItemType::kArmorItem:
+									dmui::Image(dmuiPlatform, textureArmor, 64.f, 64.f);
+									break;
+								case meItemType::kBookItem:
+									dmui::Image(dmuiPlatform, textureBook, 64.f, 64.f);
+									break;
+								case meItemType::kMiscItem:
+									dmui::Image(dmuiPlatform, textureMisc, 64.f, 64.f);
+									break;
+								case meItemType::kWeaponItem:
+									dmui::Image(dmuiPlatform, textureWeapon, 64.f, 64.f);
+									break;
+								case meItemType::kAmmoItem:
+									dmui::Image(dmuiPlatform, textureAmmo, 64.f, 64.f);
+									break;
+								case meItemType::kKeyItem:
+									dmui::Image(dmuiPlatform, textureKey, 64.f, 64.f);
+									break;
+								case meItemType::kAlchemyItem:
+									dmui::Image(dmuiPlatform, textureAlchemy, 64.f, 64.f);
+									break;
+								case meItemType::kNoteItem:
+									dmui::Image(dmuiPlatform, textureNote, 64.f, 64.f);
+									break;
+								default:
+									break;
+								}
 							}
 							if (dmui::ui::TableNextColumn())
 							{
-								dmui::ui::TextWrapped("Test 2");
-							}
+								//dmui::ui::Al
+								auto fontSize = dmui::ui::CalcTextSize("A");
+								fontSize.y = (66.f - fontSize.y) * .5f;
 
-							
+								dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, { 1.f, fontSize.y });
+								//ImGui::AlignTextToFramePadding();
+
+								auto num = plugin->GetItemCount(itemType);
+								if (num)
+									dmui::ui::Text("%u", num);
+								else
+									dmui::ui::TextColored(theme.statusDisable, "-");
+
+								dmui::ui::PopStyleVar();
+							}
 						}
 
 						dmui::ui::EndTable();
@@ -283,22 +304,11 @@ void meDMUIClient::RendererGeneralPage()
 			{
 				dataStorage->Unlock();
 			}
-
-			if (selectedPluginId != -1)
-			{
-
-			}
 		}
 		
 		dmui::ui::PopStyleColor();
 		dmui::ui::EndTable();
 	}
-	
-	//dmui::ui::TextColored
-	//dmui::ui::SameLine();
-	//dmui::ui::TextUnformatted("Hello World!");
-	//dmui::ui::Selectable("dearmodding.modexplorer.page.general.modlist")
-	//dmui::ui::TextUnformatted("Hello World!");
 }
 
 void meDMUIClient::RendererExplorerPage() noexcept
@@ -438,10 +448,17 @@ bool meDMUIClient::Connect() noexcept
 		return false;
 	}
 
-	textureArmor = dmui::TextureLoader::LoadFromFile("G:/SteamLibrary/steamapps/common/Fallout 4/Data/f4se/plugins/DearModdingUI/test1.dds");
-	if (!textureArmor)
+	textureArmor	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_ARMOR,	"PNG");
+	textureBook		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_BOOK,	"PNG");
+	textureMisc		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_MISC,	"PNG");
+	textureWeapon	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_WEAPON,	"PNG");
+	textureAmmo		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_AMMO,	"PNG");
+	textureKey		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_KEY,		"PNG");
+	textureAlchemy	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_ALCHEMY,	"PNG");
+	textureNote		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_NOTE,	"PNG");
+	if (!textureArmor || !textureNote || !textureBook || !textureMisc || !textureWeapon || 
+		!textureAmmo || !textureKey || !textureAlchemy)
 		REX::ERROR("meDMUIClient::Connect() failed load assets"sv);
-
 
 	REX::INFO("meDMUIClient::Connect() Registered as '{}' with the dmui host"sv, kClientId);
 

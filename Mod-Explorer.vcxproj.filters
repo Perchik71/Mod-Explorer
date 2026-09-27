@@ -21,5 +21,19 @@
     <ClInclude Include="Source\Host\DDSTextureLoader11.h" />
     <ClInclude Include="Source\Host\WICTextureLoader11.h" />
     <ClInclude Include="Source\Host\TextureLoader.h" />
+    <ClInclude Include="Resources\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resources\Mod-Explorer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Resources\alchemy.png" />
+    <Image Include="Resources\ammo.png" />
+    <Image Include="Resources\armor.png" />
+    <Image Include="Resources\book.png" />
+    <Image Include="Resources\key.png" />
+    <Image Include="Resources\misc.png" />
+    <Image Include="Resources\note.png" />
+    <Image Include="Resources\weapon.png" />
   </ItemGroup>
 </Project>
