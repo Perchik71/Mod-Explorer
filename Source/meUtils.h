@@ -2,8 +2,25 @@
 
 #include <RE/T/TESObjectREFR.h>
 
+#include <ranges>
+
 namespace meUtils
 {
+	// Generates an iterable range from 'front' to 'back' inclusive
+	template <typename T, typename NumT>
+	auto EnumRange(T a_front, T a_back) noexcept
+	{
+		return std::views::iota(std::to_underlying(a_front), std::to_underlying(a_back) + 1) |
+			std::views::transform([](NumT a_val) { return static_cast<T>(a_val); });
+	}
+
+	// Trim from the start (left)
+	void LTrim(std::string& s) noexcept;
+	// Trim from the end (right)
+	void RTrim(std::string& s) noexcept;
+	// Trim from both ends
+	void Trim(std::string& s) noexcept;
+
 	[[nodiscard]] std::string GetRuntimePath() noexcept;
 	[[nodiscard]] std::string GetRuntimeDirectory() noexcept;
 	bool ExecuteCommand(std::string_view a_command, RE::TESObjectREFR* a_targetRef, bool a_silent) noexcept;

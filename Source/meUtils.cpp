@@ -11,6 +11,29 @@
 // Causes crashes if put above RE/S/Script.h
 #include <RE/C/ConsoleLog.h>
 
+const std::string WHITESPACE = " \n\r\t\f\v";
+
+void meUtils::LTrim(std::string& s) noexcept
+{
+	size_t start = s.find_first_not_of(WHITESPACE);
+	s.erase(0, start);
+}
+
+void meUtils::RTrim(std::string& s) noexcept
+{
+	size_t end = s.find_last_not_of(WHITESPACE);
+	if (end != std::string::npos)
+		s.erase(end + 1);
+	else
+		s.clear(); // String is entirely whitespace
+}
+
+void meUtils::Trim(std::string& s) noexcept
+{
+	LTrim(s);
+	RTrim(s);
+}
+
 std::string meUtils::GetRuntimePath() noexcept
 {
     static char	appPath[4096] = { 0 };

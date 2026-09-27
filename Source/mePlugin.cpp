@@ -1,6 +1,7 @@
 #include "Host/meDMUIClient.h"
 #include "mePlugin.h"
 #include "mePluginInfo.h"
+#include "meDataStorage.h"
 #include "meUtils.h"
 
 #include <RE/T/TESDataHandler.h>
@@ -32,6 +33,8 @@ void mePlugin::F4SEMessageListener(F4SE::MessagingInterface::Message* a_msg) noe
 		auto plugin = mePlugin::GetSingleton();
 		if (!plugin->state.any(State::kRendererInit))
 			plugin->RegisterWidgetInDMUIPlatform();
+
+		meDataStorage::GetSingleton()->InitSDM();
 	}
 }
 
@@ -121,4 +124,6 @@ void mePlugin::Kill() noexcept
 		return;
 
 	state.set(true, State::kShutdown);
+
+	meDataStorage::GetSingleton()->KillSDM();
 }

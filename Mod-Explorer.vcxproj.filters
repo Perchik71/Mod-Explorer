@@ -6,6 +6,10 @@
     <ClCompile Include="Source\meError.cpp" />
     <ClCompile Include="Source\mePlugin.cpp" />
     <ClCompile Include="Source\Host\meDMUIClient.cpp" />
+    <ClCompile Include="Source\meDataStorage.cpp" />
+    <ClCompile Include="Source\Host\DDSTextureLoader11.cpp" />
+    <ClCompile Include="Source\Host\WICTextureLoader11.cpp" />
+    <ClCompile Include="Source\Host\TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\mePlugin.h" />
@@ -13,5 +17,9 @@
     <ClInclude Include="Source\meUtils.h" />
     <ClInclude Include="Source\meError.h" />
     <ClInclude Include="Source\Host\meDMUIClient.h" />
+    <ClInclude Include="Source\meDataStorage.h" />
+    <ClInclude Include="Source\Host\DDSTextureLoader11.h" />
+    <ClInclude Include="Source\Host\WICTextureLoader11.h" />
+    <ClInclude Include="Source\Host\TextureLoader.h" />
   </ItemGroup>
 </Project>

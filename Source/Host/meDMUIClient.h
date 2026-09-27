@@ -3,7 +3,7 @@
 #include <REX/REX.h>
 #include <DearModdingUI/Client.h>
 
-#include <memory>
+#include "TextureLoader.h"
 
 class meDMUIClient :
 	public REX::TSingleton<meDMUIClient>
@@ -15,15 +15,17 @@ class meDMUIClient :
 	static constexpr const auto kCategoryGeneralId	= "dearmodding.modexplorer.category.general";
 	static constexpr const auto kCategoryCheatsId	= "dearmodding.modexplorer.category.cheats";
 
-	static constexpr const auto kPageGeneralId = "dearmodding.modexplorer.page.general";
-	static constexpr const auto kPageExplorerId = "dearmodding.modexplorer.page.explorer";
-	static constexpr const auto kPageBasketId = "dearmodding.modexplorer.page.basket";
+	static constexpr const auto kPageGeneralId		= "dearmodding.modexplorer.page.general";
+	static constexpr const auto kPageExplorerId		= "dearmodding.modexplorer.page.explorer";
+	static constexpr const auto kPageBasketId		= "dearmodding.modexplorer.page.basket";
 
 	std::unique_ptr<dmui::Client> client{};
 
-	static void RendererGeneralPage() noexcept;
+	static void RendererGeneralPage();
 	static void RendererExplorerPage() noexcept;
 	static void RendererBasketPage() noexcept;
+
+	std::string GetLocalizeFileName() const noexcept;
 public:
 	meDMUIClient() = default;
 

@@ -19,18 +19,26 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Host\DDSTextureLoader11.cpp" />
+    <ClCompile Include="Source\Host\WICTextureLoader11.cpp" />
+    <ClCompile Include="Source\meDataStorage.cpp" />
     <ClCompile Include="Source\Host\meDMUIClient.cpp" />
     <ClCompile Include="Source\meError.cpp" />
     <ClCompile Include="Source\meMain.cpp" />
     <ClCompile Include="Source\mePlugin.cpp" />
     <ClCompile Include="Source\meUtils.cpp" />
+    <ClCompile Include="Source\Host\TextureLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Host\DDSTextureLoader11.h" />
+    <ClInclude Include="Source\Host\WICTextureLoader11.h" />
+    <ClInclude Include="Source\meDataStorage.h" />
     <ClInclude Include="Source\Host\meDMUIClient.h" />
     <ClInclude Include="Source\meError.h" />
     <ClInclude Include="Source\mePlugin.h" />
     <ClInclude Include="Source\mePluginInfo.h" />
     <ClInclude Include="Source\meUtils.h" />
+    <ClInclude Include="Source\Host\TextureLoader.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -145,7 +153,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;MODEXPLORER_EXPORTS;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;SPDLOG_COMPILED_LIB;SPDLOG_USE_STD_FORMAT;SPDLOG_WCHAR_TO_UTF8_SUPPORT;COMMONLIB_OPTION_TOML;COMMONLIB_RUNTIMECOUNT=3;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;MODEXPLORER_EXPORTS;_WINDOWS;_USRDLL;WIN32_LEAN_AND_MEAN;SPDLOG_COMPILED_LIB;SPDLOG_USE_STD_FORMAT;SPDLOG_WCHAR_TO_UTF8_SUPPORT;COMMONLIB_OPTION_TOML;COMMONLIB_RUNTIMECOUNT=3;NOMINMAX;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>F4SE\Impl\PCH.h</PrecompiledHeaderFile>

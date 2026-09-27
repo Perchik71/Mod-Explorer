@@ -29,7 +29,7 @@ F4SE_PLUGIN_QUERY(const F4SE::QueryInterface* a_f4se, F4SE::PluginInfo* a_info)
 {
     if (!a_f4se)
         return false;
-
+    
     if (!a_info)
         return false;
 

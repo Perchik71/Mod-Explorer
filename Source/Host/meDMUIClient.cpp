@@ -1,10 +1,12 @@
 #include "meDMUIClient.h"
 #include "../meUtils.h"
 #include "../mePluginInfo.h"
+#include "../meDataStorage.h"
 
 #include <RE/S/Setting.h>
+#include <atomic>
 
-
+// Common
 static dmui::localize::LocalizeString lsGeneralCategory("$GeneralCategory", "General");
 static dmui::localize::LocalizeString lsCheatsCategory("$CheatsCategory", "Cheats");
 static dmui::localize::LocalizeString lsGeneralPage("$GeneralPage", "General");
@@ -14,11 +16,289 @@ static dmui::localize::LocalizeString lsGeneralPageSummary("$GeneralPageSummary"
 static dmui::localize::LocalizeString lsExplorerPageSummary("$CheatsPageSummary", "Searching for and receiving items.");
 static dmui::localize::LocalizeString lsBasketPageSummary("$BasketPageSummary", "Your shopping basket.");
 
+// General page
+static dmui::localize::LocalizeString lsGeneralPageNumPlugins("$GeneralPageNumPlugins", "Number of installed plugins (Total/Regular/Light)");
+static dmui::localize::LocalizeString lsGeneralPageNumPluginsOrder("$GeneralPageNumPluginsOrder", "#");
+static dmui::localize::LocalizeString lsGeneralPageNumPluginsName("$GeneralPageNumPluginsName", "Name");
+static dmui::localize::LocalizeString lsGeneralPageInfoCaption("$GeneralPageInfoCaption", "Info");
+static dmui::localize::LocalizeString lsGeneralPageModNoSelected("$GeneralPageModNoSelected", "Select a plugin from the list");
+static dmui::localize::LocalizeString lsGeneralPageModAuthorCaption("$GeneralPageModAuthorCaption", "Author");
+static dmui::localize::LocalizeString lsGeneralPageModSummaryCaption("$GeneralPageModSummaryCaption", "Summary");
+static dmui::localize::LocalizeString lsGeneralPageModInfoNotSpecified("$GeneralPageModInfoNotSpecified", "Not specified");
+
+static std::atomic_bool failedAssetsLoad{};
+static std::shared_ptr<dmui::Texture> textureArmor{};
+static std::shared_ptr<dmui::Texture> textureBook{};
+static std::shared_ptr<dmui::Texture> textureMisc{};
+static std::shared_ptr<dmui::Texture> textureWeapon{};
+static std::shared_ptr<dmui::Texture> textureAmmo{};
+static std::shared_ptr<dmui::Texture> textureKey{};
+static std::shared_ptr<dmui::Texture> textureAlchemy{};
+static std::shared_ptr<dmui::Texture> textureNote{};
+
 using namespace std::literals;
 
-void meDMUIClient::RendererGeneralPage() noexcept
+namespace dmui
 {
-	dmui::ui::TextUnformatted("Hello World!");
+	static void Image(Client* a_client, const std::shared_ptr<dmui::Texture> a_texture, float a_w, float a_h) noexcept
+	{
+		if (a_w == -1.f)
+			a_w = static_cast<float>(a_texture->GetWidth());
+
+		if (a_h == -1.f)
+			a_h = static_cast<float>(a_texture->GetHeight());
+
+		const DMUI_ImageDrawOptions options
+		{
+			DMUI_IMAGE_DRAW_OPTIONS_0_1_SIZE,
+			{ a_w, a_h },
+			{ 0.0f, 0.0f },
+			{ 1.0f, 1.0f },
+			{ 1.0f, 1.0f, 1.0f, 1.0f },
+			1u,
+			0u
+		};
+
+		(void)a_client->DrawImage(a_texture->GetHandle(), options);
+	}
+}
+
+void meDMUIClient::RendererGeneralPage()
+{
+	auto dataStorage = meDataStorage::GetSingleton();
+	auto uiClient = meDMUIClient::GetSingleton();
+	auto dmuiPlatform = uiClient->client.get();
+
+	DMUI_ThemeColors theme{};
+	auto themeOptional = dmuiPlatform->GetThemeColors();
+	if (themeOptional.has_value())
+		theme = themeOptional.value();
+
+	static int32_t selectedPluginId = -1;
+
+	if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body", 2))
+	{
+		dmui::ui::TableNextRow();
+		dmui::ui::PushStyleColor(dmui::ui::Color::kText, { .9f, .9f, .9f, 1.f });
+		
+		if (dmui::ui::TableNextColumn())
+		{
+			{
+				dmui::FontGuard font{ *dmuiPlatform, DMUI_FONT_ROLE_TITLE };
+				dmui::ui::TextUnformatted(lsGeneralPageNumPlugins);
+			}
+			dmui::ui::TextUnformatted("("); dmui::ui::SameLine();
+			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetModCount()); dmui::ui::SameLine();
+			dmui::ui::TextUnformatted("/"); dmui::ui::SameLine();
+			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetDefaultModCount()); dmui::ui::SameLine();
+			dmui::ui::TextUnformatted("/"); dmui::ui::SameLine();
+			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetLightModCount()); dmui::ui::SameLine();
+			dmui::ui::TextUnformatted(")");
+
+			// Define table flags with vertical scrolling and borders
+			dmui::ui::TableFlags flags =
+				dmui::ui::TableFlags::kScrollY |
+				dmui::ui::TableFlags::kRowBg |
+				dmui::ui::TableFlags::kBorders |
+				dmui::ui::TableFlags::kResizable |
+				dmui::ui::TableFlags::kSizingFixedFit;
+
+			dmui::ui::PushStyleVar(dmui::ui::StyleVar::kItemSpacing, dmui::ui::Vec2(0.0f, 1.0f));
+			dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
+
+			if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body.plugins", 2, flags))
+			{
+				dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, { .0f, .0f, .0f, .0f });
+				dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderActive, { .0f, .0f, .0f, .0f });
+
+				// Freeze the first row (the header) so it stays visible while scrolling
+				dmui::ui::TableSetupScrollFreeze(0, 1);
+
+				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFF");	
+				
+				// Setup columns the header row
+				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
+					dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
+					sizeOrderColumn.x);
+				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName, 
+					dmui::ui::TableColumnFlags::kWidthStretch);
+				dmui::ui::TableHeadersRow();
+
+				dmui::ui::PopStyleColor(2);
+				const auto colorSelectedRow = dmui::ui::GetStyleColor(dmui::ui::Color::kHeader);
+
+				try
+				{
+					dataStorage->Lock();
+
+					dmui::ui::ListClipper clipper;
+					clipper.Begin(dataStorage->GetModCount());
+
+					while (clipper.Step())
+					{
+						// Fill table with rows of data
+						for (int32_t row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
+						{
+							auto plugin = dataStorage->GetModByIndex(row);
+							auto is_selected = (selectedPluginId == row);
+
+							if (is_selected)
+								dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, colorSelectedRow);
+
+							dmui::ui::TableNextRow();
+
+							if (dmui::ui::TableNextColumn())
+							{
+								char label[96];
+								sprintf_s(label, "##dearmodding.modexplorer.page.general.body.plugins.row.%d", row);
+								if (dmui::ui::Selectable(label, is_selected, dmui::ui::SelectableFlags::kSpanAllColumns))
+									selectedPluginId = row;
+
+								dmui::ui::SameLine(.0f, .0f);
+
+								if (is_selected)
+									dmui::ui::Text("0x%X", plugin->GetIndex().value());
+								else
+								{
+									if (plugin->GetFile()->IsLight())
+										dmui::ui::TextColored(theme.statusDisable, "0x%X", plugin->GetIndex().value());
+									else
+										dmui::ui::TextColored(theme.accent, "0x%X", plugin->GetIndex().value());
+								}
+							}
+
+							if (dmui::ui::TableNextColumn())
+								dmui::ui::Text(plugin->GetFileName().c_str());
+
+							if (is_selected)
+								dmui::ui::PopStyleColor();
+						}
+					}
+				}
+				catch (...)
+				{
+					dataStorage->Unlock();
+				}
+
+				dmui::ui::EndTable();
+			}
+
+			dmui::ui::PopStyleVar(2);
+		}
+		if (dmui::ui::TableNextColumn())
+		{
+			try
+			{
+				constexpr auto colorHeader = dmui::ui::Vec4(1.f, .85f, .1f, 1.f);
+
+				dataStorage->Lock();
+
+				auto plugin = selectedPluginId == -1 ? nullptr :
+					dataStorage->GetModByIndex(selectedPluginId).get();
+
+				{
+					dmui::FontGuard font{ *dmuiPlatform, DMUI_FONT_ROLE_TITLE };
+					dmui::ui::TextUnformatted(lsGeneralPageInfoCaption);
+				}
+
+				dmui::ui::NewLine();
+
+				if (!plugin)
+				{
+					dmui::ui::PushStyleColor(dmui::ui::Color::kText, theme.error);
+					dmui::ui::TextWrapped(lsGeneralPageModNoSelected);
+					dmui::ui::PopStyleColor();
+				}
+				else
+				{
+					auto GetStr = [&](const std::string& a_str, const char* a_default)
+						{
+							return (a_str.empty() || !a_str.length()) ? a_default : a_str.c_str();
+						};
+
+					dmui::ui::TextColored(colorHeader, "%s: ", lsGeneralPageModAuthorCaption.GetValue().c_str());
+					dmui::ui::SameLine();
+					dmui::ui::TextWrapped(GetStr(plugin->GetAuthor(), lsGeneralPageModInfoNotSpecified));
+					dmui::ui::TextColored(colorHeader, "%s: ", lsGeneralPageModSummaryCaption.GetValue().c_str());
+					dmui::ui::SameLine();
+					dmui::ui::TextWrapped(GetStr(plugin->GetSummary(), lsGeneralPageModInfoNotSpecified));
+
+					// Define table flags with vertical scrolling and borders
+					dmui::ui::TableFlags flags =
+						dmui::ui::TableFlags::kScrollY |
+						dmui::ui::TableFlags::kSizingFixedFit;
+
+					textureArmor->SendOnceDmuiRequest(dmuiPlatform);
+					dmui::Image(dmuiPlatform, textureArmor, 64.f, 64.f);
+					
+					//{
+					//	auto opt = dmuiPlatform->ImportD3D11Image(textureArmor->resource, textureArmor->width, textureArmor->height);
+					//	if (opt.has_value())
+					//		dmuiPlatform->DrawImage(opt->Handle(), options);
+					//	else
+					//		REX::INFO("dsfsdfsd");
+					//}
+					//else REX::INFO("ghf");
+
+					//if (!DMUI_DrawImage(uiClient->client.get(), , options))
+					//	DMUI_LoadImage(dmuiPlatform, textureArmor, );
+
+					if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body.plugininfo", 2, flags))
+					{
+						// Setup columns the header row
+						dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
+							dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize, 96);
+						dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName,
+							dmui::ui::TableColumnFlags::kWidthStretch);
+
+						for (auto itemType : meItemTypes)
+						{
+							dmui::ui::TableNextRow();
+							if (dmui::ui::TableNextColumn())
+							{
+								
+								//
+							//	const auto glyph = dmuiPlatform->ResolveIconGlyph(
+							//		"Display Settings", nullptr, "Graphics");
+
+							//	dmui::
+
+								//dmuiPlatform->
+
+								dmui::ui::TextWrapped("Test 1");
+							}
+							if (dmui::ui::TableNextColumn())
+							{
+								dmui::ui::TextWrapped("Test 2");
+							}
+
+							
+						}
+
+						dmui::ui::EndTable();
+					}
+				}
+			}
+			catch (...)
+			{
+				dataStorage->Unlock();
+			}
+
+			if (selectedPluginId != -1)
+			{
+
+			}
+		}
+		
+		dmui::ui::PopStyleColor();
+		dmui::ui::EndTable();
+	}
+	
+	//dmui::ui::TextColored
+	//dmui::ui::SameLine();
+	//dmui::ui::TextUnformatted("Hello World!");
+	//dmui::ui::Selectable("dearmodding.modexplorer.page.general.modlist")
+	//dmui::ui::TextUnformatted("Hello World!");
 }
 
 void meDMUIClient::RendererExplorerPage() noexcept
@@ -29,6 +309,41 @@ void meDMUIClient::RendererExplorerPage() noexcept
 void meDMUIClient::RendererBasketPage() noexcept
 {
 	dmui::ui::TextUnformatted("Hello World!");
+}
+
+std::string meDMUIClient::GetLocalizeFileName() const noexcept
+{
+	std::string lfile = meUtils::GetRuntimeDirectory() + "Data/F4SE/Plugins/DearModdingUI/Translation/Mod Explorer/ModExplorer.txt";
+
+	// Retrieve the global collection of INI settings
+	auto settings = RE::INISettingCollection::GetSingleton();
+	if (!settings)
+	{
+		REX::ERROR("RE::INISettingCollection::GetSingleton return nullptr"sv);
+		return "";
+	}
+
+	// Look up the SLanguage:General setting
+	// Yeah, exactly SLanguage:General this Bethesda
+	auto setting = settings->GetSetting("SLanguage:General");
+	if (setting && (setting->GetType() == RE::Setting::SETTING_TYPE::kString))
+	{
+		std::string lang = setting->GetString().data();
+		lang.insert(0, "_");
+
+		auto it = lfile.find_last_of('.');
+		if (it != std::string::npos)
+			lfile.insert(it, lang);
+		else
+			lfile += lang;
+	}
+	else
+	{
+		REX::ERROR("RE::INISettingCollection::GetSetting no found \"SLanguage:General\" setting"sv);
+		return "";
+	}
+
+	return lfile;
 }
 
 bool meDMUIClient::Connect() noexcept
@@ -54,50 +369,24 @@ bool meDMUIClient::Connect() noexcept
 		return false;
 	}
 
-	std::string lfile = meUtils::GetRuntimeDirectory() + "Data/F4SE/Plugins/DearModdingUI/Translation/Mod Explorer/ModExplorer.txt";
-
-	// Retrieve the global collection of INI settings
-	auto settings = RE::INISettingCollection::GetSingleton();
-	if (!settings)
+	auto lfile = GetLocalizeFileName();
+	if (lfile.length() > 0)
 	{
-		REX::ERROR("RE::INISettingCollection::GetSingleton return nullptr"sv);
-		return false;
-	}
+		auto localizeStringManager = dmui::localize::LocalizationManager::GetSingleton();
+		localizeStringManager->Init(lfile);
+		if (localizeStringManager->Exists())
+			localizeStringManager->Load();
 
-	// Look up the SLanguage:General setting
-	// Yeah, exactly SLanguage:General this Bethesda
-	auto setting = settings->GetSetting("SLanguage:General");
-	if (setting && (setting->GetType() == RE::Setting::SETTING_TYPE::kString))
-	{
-		std::string lang = setting->GetString().data();
-		lang.insert(0, "_");
-
-		auto it = lfile.find_last_of('.');
-		if (it != std::string::npos)
-			lfile.insert(it, lang);
-		else
-			lfile += lang;
-	}
-	else
-	{
-		REX::ERROR("RE::INISettingCollection::GetSetting no found \"SLanguage:General\" setting"sv);
-		return false;
-	}
-
-	auto localizeStringManager = dmui::localize::LocalizationManager::GetSingleton();
-	localizeStringManager->Init(lfile);
-	if (localizeStringManager->Exists())
-		localizeStringManager->Load();
-
-	if (!client->AddCategory({ 
-		.id = kCategoryGeneralId,
-		.displayName = lsGeneralCategory,
-		.sortKey = 0,
-		.iconName = "info",
-		}) && (DMUI_RESULT_DUPLICATE_CATEGORY_ID != client->LastResult()))
-	{
-		REX::ERROR("meDMUIClient::Connect() dmui add category failed, {}"sv, DMUI_ResultToString(client->LastResult()));
-		return false;
+		if (!client->AddCategory({
+			.id = kCategoryGeneralId,
+			.displayName = lsGeneralCategory,
+			.sortKey = 0,
+			.iconName = "info",
+			}) && (DMUI_RESULT_DUPLICATE_CATEGORY_ID != client->LastResult()))
+		{
+			REX::ERROR("meDMUIClient::Connect() dmui add category failed, {}"sv, DMUI_ResultToString(client->LastResult()));
+			return false;
+		}
 	}
 
 	if (!client->AddCategory({
@@ -143,11 +432,16 @@ bool meDMUIClient::Connect() noexcept
 		.summary = lsBasketPageSummary,
 		.sortKey = 1,
 		.iconName = "basket", },
-		std::addressof(RendererExplorerPage)) && (DMUI_RESULT_DUPLICATE_PAGE_ID != client->LastResult()))
+		std::addressof(RendererBasketPage)) && (DMUI_RESULT_DUPLICATE_PAGE_ID != client->LastResult()))
 	{
 		REX::ERROR("meDMUIClient::Connect() Page 'Basket' registration failed, {}"sv, DMUI_ResultToString(client->LastResult()));
 		return false;
 	}
+
+	textureArmor = dmui::TextureLoader::LoadFromFile("G:/SteamLibrary/steamapps/common/Fallout 4/Data/f4se/plugins/DearModdingUI/test1.dds");
+	if (!textureArmor)
+		REX::ERROR("meDMUIClient::Connect() failed load assets"sv);
+
 
 	REX::INFO("meDMUIClient::Connect() Registered as '{}' with the dmui host"sv, kClientId);
 
