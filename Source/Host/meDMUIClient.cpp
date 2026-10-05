@@ -16,6 +16,7 @@ static dmui::localize::LocalizeString lsBasketPage("$BasketPage", "Basket");
 static dmui::localize::LocalizeString lsGeneralPageSummary("$GeneralPageSummary", "Number of mods, and items that can be obtained, etc.");
 static dmui::localize::LocalizeString lsExplorerPageSummary("$CheatsPageSummary", "Searching for and receiving items.");
 static dmui::localize::LocalizeString lsBasketPageSummary("$BasketPageSummary", "Your shopping basket.");
+static dmui::localize::LocalizeString lsAll("$All", "All");
 static dmui::localize::LocalizeString lsArmor("$Armor", "Armor");
 static dmui::localize::LocalizeString lsBook("$Book", "Book");
 static dmui::localize::LocalizeString lsMisc("$Misc", "Misc");
@@ -125,7 +126,7 @@ void meDMUIClient::RendererGeneralPage()
 				// Freeze the first row (the header) so it stays visible while scrolling
 				dmui::ui::TableSetupScrollFreeze(0, 1);
 
-				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFF");	
+				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFFZ");	
 				
 				// Setup columns the header row
 				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
@@ -521,10 +522,10 @@ void meDMUIClient::RendererExplorerPage() noexcept
 			dmui::ui::PushStyleColor(dmui::ui::Color::kButton, theme.statusDisable);
 
 			auto currentBtnType = selectedShopTypeId.load();
-			auto createBtn = [&](const char* a_id, std::int8_t a_typeId) {
+			auto createBtn = [&](const std::string& a_id, std::int8_t a_typeId) {
 				if (currentBtnType == a_typeId)
 					dmui::ui::PushStyleColor(dmui::ui::Color::kButton, prevColor);
-				if (dmui::ui::Button(a_id))
+				if (dmui::ui::Button(a_id.c_str()))
 				{
 					done.store(false);
 					selectedShopTypeId.store(a_typeId);
@@ -534,15 +535,15 @@ void meDMUIClient::RendererExplorerPage() noexcept
 					dmui::ui::PopStyleColor();
 				};
 
-			createBtn("All##dearmodding.modexplorer.page.explorer.body.buttons.all", -1); dmui::ui::SameLine();
-			createBtn("Armor##dearmodding.modexplorer.page.explorer.body.buttons.armor", 0); dmui::ui::SameLine();
-			createBtn("Book##dearmodding.modexplorer.page.explorer.body.buttons.book", 1); dmui::ui::SameLine();
-			createBtn("Misc##dearmodding.modexplorer.page.explorer.body.buttons.misc", 2); dmui::ui::SameLine();
-			createBtn("Weapon##dearmodding.modexplorer.page.explorer.body.buttons.weapon", 3); dmui::ui::SameLine();
-			createBtn("Ammo##dearmodding.modexplorer.page.explorer.body.buttons.ammo", 4); dmui::ui::SameLine();
-			createBtn("Key##dearmodding.modexplorer.page.explorer.body.buttons.key", 5); dmui::ui::SameLine();
-			createBtn("Alchemy##dearmodding.modexplorer.page.explorer.body.buttons.alchemy", 6); dmui::ui::SameLine();
-			createBtn("Note##dearmodding.modexplorer.page.explorer.body.buttons.note", 7);
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.all", lsAll.GetValue()), -1); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.armor", lsArmor.GetValue()), 0); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.book", lsBook.GetValue()), 1); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.misc", lsMisc.GetValue()), 2); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.weapon", lsWeapon.GetValue()), 3); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.ammo", lsAmmo.GetValue()), 4); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.key", lsKey.GetValue()), 5); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.alchemy", lsAlchemy.GetValue()), 6); dmui::ui::SameLine();
+			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.note", lsNote.GetValue()), 7);
 
 			dmui::ui::PopStyleColor();
 
@@ -749,17 +750,17 @@ bool meDMUIClient::Connect() noexcept
 		localizeStringManager->Init(lfile);
 		if (localizeStringManager->Exists())
 			localizeStringManager->Load();
+	}
 
-		if (!client->AddCategory({
+	if (!client->AddCategory({
 			.id = kCategoryGeneralId,
 			.displayName = lsGeneralCategory,
 			.sortKey = 0,
 			.iconName = "info",
-			}) && (DMUI_RESULT_DUPLICATE_CATEGORY_ID != client->LastResult()))
-		{
-			REX::ERROR("meDMUIClient::Connect() dmui add category failed, {}"sv, DMUI_ResultToString(client->LastResult()));
-			return false;
-		}
+		}) && (DMUI_RESULT_DUPLICATE_CATEGORY_ID != client->LastResult()))
+	{
+		REX::ERROR("meDMUIClient::Connect() dmui add category failed, {}"sv, DMUI_ResultToString(client->LastResult()));
+		return false;
 	}
 
 	if (!client->AddCategory({
@@ -811,15 +812,15 @@ bool meDMUIClient::Connect() noexcept
 		return false;
 	}
 
-	textureArmor	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_ARMOR,	"PNG");
-	textureBook		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_BOOK,	"PNG");
-	textureMisc		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_MISC,	"PNG");
-	textureWeapon	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_WEAPON,	"PNG");
-	textureAmmo		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_AMMO,	"PNG");
-	textureKey		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_KEY,		"PNG");
-	textureAlchemy	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_ALCHEMY,	"PNG");
-	textureNote		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_NOTE,	"PNG");
-	textureStar		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kWIC, IDB_STAR,	"PNG");
+	textureArmor	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_ARMOR,	"DDS");
+	textureBook		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_BOOK,	"DDS");
+	textureMisc		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_MISC,	"DDS");
+	textureWeapon	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_WEAPON,	"DDS");
+	textureAmmo		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_AMMO,	"DDS");
+	textureKey		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_KEY,		"DDS");
+	textureAlchemy	= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_ALCHEMY,	"DDS");
+	textureNote		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_NOTE,	"DDS");
+	textureStar		= dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_STAR,	"DDS");
 	if (!textureArmor || !textureNote || !textureBook || !textureMisc || !textureWeapon || 
 		!textureAmmo || !textureKey || !textureAlchemy || !textureStar)
 		REX::ERROR("meDMUIClient::Connect() failed load assets"sv);

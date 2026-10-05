@@ -27,14 +27,14 @@
     <ResourceCompile Include="Resources\Mod-Explorer.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="Resources\alchemy.png" />
-    <Image Include="Resources\ammo.png" />
-    <Image Include="Resources\armor.png" />
-    <Image Include="Resources\book.png" />
-    <Image Include="Resources\key.png" />
-    <Image Include="Resources\misc.png" />
-    <Image Include="Resources\note.png" />
-    <Image Include="Resources\weapon.png" />
-    <Image Include="Resources\star.png" />
+    <Image Include="Resources\alchemy.dds" />
+    <Image Include="Resources\ammo.dds" />
+    <Image Include="Resources\armor.dds" />
+    <Image Include="Resources\book.dds" />
+    <Image Include="Resources\key.dds" />
+    <Image Include="Resources\misc.dds" />
+    <Image Include="Resources\note.dds" />
+    <Image Include="Resources\star.dds" />
+    <Image Include="Resources\weapon.dds" />
   </ItemGroup>
 </Project>
