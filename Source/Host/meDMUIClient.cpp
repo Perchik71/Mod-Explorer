@@ -25,9 +25,11 @@ static dmui::localize::LocalizeString lsAmmo("$Ammo", "Ammo");
 static dmui::localize::LocalizeString lsKey("$Key", "Key");
 static dmui::localize::LocalizeString lsAlchemy("$Alchemy", "Alchemy");
 static dmui::localize::LocalizeString lsNote("$Note", "Note");
+static dmui::localize::LocalizeString lsType("$Type", "Type");
+static dmui::localize::LocalizeString lsFullname("$Fullname", "Full name");
 
 // General page
-static dmui::localize::LocalizeString lsGeneralPageNumPlugins("$GeneralPageNumPlugins", "Number of installed plugins (Total/Regular/Light)");
+static dmui::localize::LocalizeString lsGeneralPageNumPlugins("$GeneralPageNumPlugins", "Installed plugins");
 static dmui::localize::LocalizeString lsGeneralPageNumPluginsOrder("$GeneralPageNumPluginsOrder", "#");
 static dmui::localize::LocalizeString lsGeneralPageNumPluginsName("$GeneralPageNumPluginsName", "Name");
 static dmui::localize::LocalizeString lsGeneralPageInfoCaption("$GeneralPageInfoCaption", "Info");
@@ -35,6 +37,12 @@ static dmui::localize::LocalizeString lsGeneralPageModNoSelected("$GeneralPageMo
 static dmui::localize::LocalizeString lsGeneralPageModAuthorCaption("$GeneralPageModAuthorCaption", "Author");
 static dmui::localize::LocalizeString lsGeneralPageModSummaryCaption("$GeneralPageModSummaryCaption", "Summary");
 static dmui::localize::LocalizeString lsGeneralPageModInfoNotSpecified("$GeneralPageModInfoNotSpecified", "Not specified");
+static dmui::localize::LocalizeString lsGeneralPageModTotalCaption("$GeneralPageModTotalCaption", "Total");
+static dmui::localize::LocalizeString lsGeneralPageModRegularCaption("$GeneralPageModRegularCaption", "Regular");
+static dmui::localize::LocalizeString lsGeneralPageModLightCaption("$GeneralPageModLightCaption", "Light");
+
+// Explorer page
+
 
 static std::atomic_bool failedAssetsLoad{};
 static std::shared_ptr<dmui::Texture> textureArmor{};
@@ -99,13 +107,13 @@ void meDMUIClient::RendererGeneralPage()
 				dmui::FontGuard font{ *dmuiPlatform, DMUI_FONT_ROLE_TITLE };
 				dmui::ui::TextUnformatted(lsGeneralPageNumPlugins);
 			}
-			dmui::ui::TextUnformatted("("); dmui::ui::SameLine();
-			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetModCount()); dmui::ui::SameLine();
-			dmui::ui::TextUnformatted("/"); dmui::ui::SameLine();
+
+			dmui::ui::Text("%s:", lsGeneralPageModTotalCaption.GetValue()); dmui::ui::SameLine();
+			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetModCount()); dmui::ui::SameLine();	
+			dmui::ui::Text("/ %s:", lsGeneralPageModRegularCaption.GetValue()); dmui::ui::SameLine();
 			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetDefaultModCount()); dmui::ui::SameLine();
-			dmui::ui::TextUnformatted("/"); dmui::ui::SameLine();
-			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetLightModCount()); dmui::ui::SameLine();
-			dmui::ui::TextUnformatted(")");
+			dmui::ui::Text("/ %s:", lsGeneralPageModLightCaption.GetValue()); dmui::ui::SameLine();
+			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetLightModCount());
 
 			// Define table flags with vertical scrolling and borders
 			dmui::ui::TableFlags flags =
@@ -126,12 +134,12 @@ void meDMUIClient::RendererGeneralPage()
 				// Freeze the first row (the header) so it stays visible while scrolling
 				dmui::ui::TableSetupScrollFreeze(0, 1);
 
-				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFFZ");	
+				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFF");	
 				
 				// Setup columns the header row
 				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
 					dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-					sizeOrderColumn.x);
+					sizeOrderColumn.x + 8.f);
 				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName, 
 					dmui::ui::TableColumnFlags::kWidthStretch);
 				dmui::ui::TableHeadersRow();
@@ -581,10 +589,10 @@ void meDMUIClient::RendererExplorerPage() noexcept
 					dmui::ui::TableSetupColumn("FormID",
 						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
 						sizeOrderColumn.x);
-					dmui::ui::TableSetupColumn("Type",
+					dmui::ui::TableSetupColumn(lsType,
 						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
 						sizeOrderColumn.x * 1.2f);
-					dmui::ui::TableSetupColumn("Full name",
+					dmui::ui::TableSetupColumn(lsFullname,
 						dmui::ui::TableColumnFlags::kWidthStretch);
 					dmui::ui::TableHeadersRow();
 
@@ -609,7 +617,7 @@ void meDMUIClient::RendererExplorerPage() noexcept
 							}
 
 							if (dmui::ui::TableNextColumn())
-								dmui::ui::TextAligned(.5f, sizeOrderColumn.x, std::format("0x{:08X}", item.formId));
+								dmui::ui::Text("0x%08X", item.formId);
 
 							if (dmui::ui::TableNextColumn())
 							{
@@ -694,7 +702,10 @@ std::string meDMUIClient::GetLocalizeFileName() const noexcept
 
 	// Look up the SLanguage:General setting
 	// Yeah, exactly SLanguage:General this Bethesda
-	auto setting = settings->GetSetting("SLanguage:General");
+	auto setting = settings->GetSetting("SLanguage:General"); 
+	if (!setting) 
+		setting = settings->GetSetting("sLanguage:General");
+
 	if (setting && (setting->GetType() == RE::Setting::SETTING_TYPE::kString))
 	{
 		std::string lang = setting->GetString().data();
