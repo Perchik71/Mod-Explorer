@@ -60,7 +60,7 @@ bool meModStorage::IsValidForm(const RE::TESForm* a_form) noexcept
 	auto name = (RE::TESFullName*)RE::RTDynamicCast((void*)a_form, 0, (void*)RE::RTTI::TESForm.address(),
 		(void*)RE::RTTI::TESFullName.address(), 0);
 
-	if (!name || !strlen(name->fullName.c_str()) || (name->fullName.c_str()[0] == '<'))
+	if (!name || name->fullName.QEmpty() || (name->fullName.c_str()[0] == '<'))
 		return false;
 
 	return true;
@@ -83,8 +83,6 @@ void meModStorage::AddItem(meItemType a_type, const RE::TESForm* a_form) noexcep
 
 	meItem item{};
 	item.formId = a_form->formID;
-	auto edid = a_form->GetFormEditorID();
-	item.editorId = edid ? edid : "";
 	item.form = a_form;
 	item.type = a_type;
 
@@ -103,11 +101,12 @@ void meModStorage::AddItem(meItemType a_type, const RE::TESForm* a_form) noexcep
 
 	auto name = (RE::TESFullName*)RE::RTDynamicCast((void*)a_form, 0, (void*)RE::RTTI::TESForm.address(),
 		(void*)RE::RTTI::TESFullName.address(), 0);
-	auto weight = (RE::TESWeightForm*)RE::RTDynamicCast((void*)a_form, 0, (void*)RE::RTTI::TESObjectMISC.address(),
+	auto weight = (RE::TESWeightForm*)RE::RTDynamicCast((void*)a_form, 0, (void*)RE::RTTI::TESForm.address(),
 		(void*)RE::RTTI::TESWeightForm.address(), 0);
-	auto value = (RE::TESValueForm*)RE::RTDynamicCast((void*)a_form, 0, (void*)RE::RTTI::TESObjectMISC.address(),
+	auto value = (RE::TESValueForm*)RE::RTDynamicCast((void*)a_form, 0, (void*)RE::RTTI::TESForm.address(),
 		(void*)RE::RTTI::TESValueForm.address(), 0);
-	if (name) item.name = name->fullName.c_str();
+
+	if (name) item.name = name->fullName.QString();
 	if (weight) item.weight = weight->weight;
 	if (value) item.price = value->value;
 
@@ -243,11 +242,12 @@ uint32_t meModStorage::GetItemCount(meItemType a_type) const noexcept
 	}
 }
 
-void meModStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted) const noexcept
+void meModStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted, bool a_clear) const noexcept
 {
 	RE::BSAutoLock guard(const_cast<meModStorage*>(this)->locker);
 
-	a_list.clear();
+	if (a_clear)
+		a_list.clear();
 
 	if (a_type == meItemType::kMax)
 	{
@@ -260,7 +260,7 @@ void meModStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_sor
 		if (id == -1)
 			return;
 
-		a_list.assign_range(arrList[id]);
+		a_list.append_range(arrList[id]);
 	}
 
 	if (a_sorted)
@@ -371,6 +371,11 @@ uint32_t meDataStorage::GetModCount() const noexcept
 	return static_cast<uint32_t>(sortedMods.size());
 }
 
+uint32_t meDataStorage::GetModForShopCount() const noexcept
+{
+	return static_cast<uint32_t>(sortedShopMods.size());
+}
+
 const std::shared_ptr<meModStorage> meDataStorage::GetMod(const std::string& a_filename) const noexcept
 {
 	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
@@ -389,6 +394,15 @@ const std::shared_ptr<meModStorage> meDataStorage::GetModByIndex(uint32_t a_idx)
 	return sortedMods[a_idx];
 }
 
+const std::shared_ptr<meModStorage> meDataStorage::GetModForShopByIndex(uint32_t a_idx) const noexcept
+{
+	if (a_idx >= GetModForShopCount())
+		return nullptr;
+
+	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
+	return sortedShopMods[a_idx];
+}
+
 uint32_t meDataStorage::GetItemCount(meItemType a_type) const noexcept
 {
 	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
@@ -399,14 +413,15 @@ uint32_t meDataStorage::GetItemCount(meItemType a_type) const noexcept
 	return num;
 }
 
-void meDataStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted) const noexcept
+void meDataStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted, bool a_clear) const noexcept
 {
 	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
 
-	a_list.clear();
+	if (a_clear)
+		a_list.clear();
 
 	for (auto& it : mods)
-		it.second->GetAllItems(a_type, a_list, false);
+		it.second->GetAllItems(a_type, a_list, false, false);
 
 	if (a_sorted)
 		std::qsort(a_list.data(), a_list.size(), sizeof(meItem), std::addressof(meModStorage::CompareItems));
@@ -466,6 +481,10 @@ void meDataStorage::InitSDM() noexcept
 
 	for (auto& it : mods)
 		it.second->Sort();
+
+	for (auto& mod : sortedMods)
+		if (mod && mod->file && mod->GetItemCount(meItemType::kMax))
+			sortedShopMods.emplace_back(mod);
 }
 
 void meDataStorage::KillSDM() noexcept
@@ -473,4 +492,6 @@ void meDataStorage::KillSDM() noexcept
 	RE::BSAutoLock guard(locker);
 
 	mods.clear();
+	sortedMods.clear();
+	sortedShopMods.clear();
 }

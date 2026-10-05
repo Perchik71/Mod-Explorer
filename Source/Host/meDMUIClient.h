@@ -28,6 +28,7 @@ class meDMUIClient :
 	std::string GetLocalizeFileName() const noexcept;
 public:
 	meDMUIClient() = default;
+	~meDMUIClient();
 
 	bool Connect() noexcept;
 };

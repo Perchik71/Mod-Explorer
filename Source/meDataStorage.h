@@ -27,8 +27,8 @@ enum class meItemType : uint32_t
 	kAlchemyItem	= RE::ENUM_FORM_ID::kALCH,
 	kNoteItem		= RE::ENUM_FORM_ID::kNOTE,
 	kMax			= 8,
-	kFirst			= kArmorItem,
-	kLast			= kNoteItem,
+//	kFirst			= kArmorItem,
+//	kLast			= kNoteItem,
 };
 
 constexpr std::array<meItemType, std::to_underlying(meItemType::kMax)> meItemTypes =
@@ -45,13 +45,12 @@ constexpr std::array<meItemType, std::to_underlying(meItemType::kMax)> meItemTyp
 
 enum class meItemFlag : uint32_t
 {
-	kQuestItem		= 0 << 1,
+	kQuestItem		= 1 << 0,
 };
 
 struct meItem
 {
 	uint32_t formId;
-	std::string editorId;
 	std::string name;
 	meItemType type;
 	float weight;
@@ -98,7 +97,7 @@ public:
 	inline const RE::TESFile* GetFile() const noexcept { return file; }
 
 	uint32_t GetItemCount(meItemType a_type) const noexcept;
-	void GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted = true) const noexcept;
+	void GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted = true, bool a_clear = true) const noexcept;
 	void Sort() noexcept;
 
 	std::optional<meItem> GetItem(meItemType a_type, uint32_t a_formId) const noexcept;
@@ -112,6 +111,7 @@ class meDataStorage :
 {
 	meModList mods{};
 	meModSortedList sortedMods{};
+	meModSortedList sortedShopMods{};
 	uint32_t dmodNum{ 0 }, lmodNum{ 0 };
 	RE::BSSpinLock locker{};
 
@@ -121,10 +121,12 @@ public:
 	meDataStorage() = default;
 
 	uint32_t GetModCount() const noexcept;
+	uint32_t GetModForShopCount() const noexcept;
 	const std::shared_ptr<meModStorage> GetMod(const std::string& a_filename) const noexcept;
 	const std::shared_ptr<meModStorage> GetModByIndex(uint32_t a_idx) const noexcept;
+	const std::shared_ptr<meModStorage> GetModForShopByIndex(uint32_t a_idx) const noexcept;
 	uint32_t GetItemCount(meItemType a_type) const noexcept;
-	void GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted = true) const noexcept;
+	void GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted = true, bool a_clear = true) const noexcept;
 
 	inline uint32_t GetDefaultModCount() const noexcept { return dmodNum; }
 	inline uint32_t GetLightModCount() const noexcept { return lmodNum; }
@@ -139,4 +141,15 @@ public:
 
 	void InitSDM() noexcept;
 	void KillSDM() noexcept;
+};
+
+class meDataStorageAutoLock
+{
+	meDataStorage* storage{ nullptr };
+
+	meDataStorageAutoLock(const meDataStorageAutoLock&) = delete;
+	meDataStorageAutoLock(meDataStorageAutoLock&&) = delete;
+public:
+	meDataStorageAutoLock(meDataStorage* a_storage) : storage(a_storage) { if (storage) storage->Lock(); }
+	~meDataStorageAutoLock() { if (storage) storage->Unlock(); }
 };

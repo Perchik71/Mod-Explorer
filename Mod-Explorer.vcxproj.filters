@@ -35,5 +35,6 @@
     <Image Include="Resources\misc.png" />
     <Image Include="Resources\note.png" />
     <Image Include="Resources\weapon.png" />
+    <Image Include="Resources\star.png" />
   </ItemGroup>
 </Project>

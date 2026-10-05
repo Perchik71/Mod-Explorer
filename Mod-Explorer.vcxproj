@@ -52,6 +52,7 @@
     <Image Include="Resources\key.png" />
     <Image Include="Resources\misc.png" />
     <Image Include="Resources\note.png" />
+    <Image Include="Resources\star.png" />
     <Image Include="Resources\weapon.png" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
