@@ -34,7 +34,12 @@ void mePlugin::F4SEMessageListener(F4SE::MessagingInterface::Message* a_msg) noe
 		if (!plugin->state.any(State::kRendererInit))
 			plugin->RegisterWidgetInDMUIPlatform();
 
+		// Start update and lock draw data
+		meDMUIClient::GetSingleton()->BeginUpdate();
+		// Update data
 		meDataStorage::GetSingleton()->InitSDM();
+		// End update and unlock draw data
+		meDMUIClient::GetSingleton()->EndUpdate();
 	}
 }
 

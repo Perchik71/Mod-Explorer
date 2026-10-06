@@ -7,6 +7,11 @@
 #include <RE/S/Setting.h>
 #include <atomic>
 #include <numbers>
+#include <shlwapi.h>
+
+#undef ERROR
+#undef MEM_RELEASE
+#undef MAX_SIZE
 
 // Common
 static dmui::localize::LocalizeString lsGeneralCategory("$GeneralCategory", "General");
@@ -28,6 +33,7 @@ static dmui::localize::LocalizeString lsAlchemy("$Alchemy", "Alchemy");
 static dmui::localize::LocalizeString lsNote("$Note", "Note");
 static dmui::localize::LocalizeString lsType("$Type", "Type");
 static dmui::localize::LocalizeString lsFullname("$Fullname", "Full name");
+static dmui::localize::LocalizeString lsSearch("$Search", "Search");
 
 // General page
 static dmui::localize::LocalizeString lsGeneralPageNumPlugins("$GeneralPageNumPlugins", "Installed plugins");
@@ -43,9 +49,12 @@ static dmui::localize::LocalizeString lsGeneralPageModRegularCaption("$GeneralPa
 static dmui::localize::LocalizeString lsGeneralPageModLightCaption("$GeneralPageModLightCaption", "Light");
 
 // Explorer page
+static dmui::localize::LocalizeString lsExplorerPageBuyAll("$ExplorerPageBuyAll", "Take All");
+static dmui::localize::LocalizeString lsExplorerPageBuy("$ExplorerPageBuy", "Take");
+static dmui::localize::LocalizeString lsExplorerPageShowModel("$ExplorerPageShowModel", "Show model");
+static dmui::localize::LocalizeString lsExplorerPageCount("$ExplorerPageCount", "Count");
 
-
-static std::atomic_bool failedAssetsLoad{};
+// Other
 static std::shared_ptr<dmui::Texture> textureArmor{};
 static std::shared_ptr<dmui::Texture> textureBook{};
 static std::shared_ptr<dmui::Texture> textureMisc{};
@@ -57,12 +66,24 @@ static std::shared_ptr<dmui::Texture> textureNote{};
 static std::shared_ptr<dmui::Texture> textureStar{};
 
 static std::atomic_bool no_once_load_items = true;
+static std::atomic_bool updateFrame = false;
+static std::atomic_bool updatePlugins = false;
+static std::atomic_bool updateSearchPlugins = false;
 static std::atomic_bool done = true;
 static std::atomic_bool terminated = false;
 static std::atomic_bool needItemsUpdate = false;
 static std::atomic_int32_t selectedShopPluginId = -1;
 static std::atomic_int8_t selectedShopTypeId = -1;
+
+static meModSortedList pluginSearchShopList{};
+
 static meItemList itemShopList;
+static std::array<char, 128> textExplorerSearchPlugin{};
+static std::array<char, 128> textExplorerSearchPluginDone{};
+
+static std::array<char, 128> textSearchItem{};
+static std::vector<int32_t> SearchPlugins{};
+static std::vector<int32_t> SearchItems{};
 
 using namespace std::literals;
 
@@ -84,7 +105,7 @@ namespace dmui
 		(void)dmui::ui::Image(a_texture->GetHandle(), { a_w, a_h });
 	}
 
-	static double GetTime()
+	static double GetTime() noexcept
 	{
 		// Get the duration elapsed since the clock's epoch
 		auto duration_since_epoch = std::chrono::steady_clock::now().time_since_epoch();
@@ -97,7 +118,7 @@ namespace dmui
 	namespace spinner
 	{
 		static void SpinnerFadeBars(float w, const dmui::ui::Vec4& color = { 1.f, 1.f, 1.f, 1.f },
-			float speed = 2.8f, size_t bars = 3, bool scale = false)
+			float speed = 2.8f, size_t bars = 3, bool scale = false) noexcept
 		{
 			const float radius = (w * 0.5f) * bars;
 			dmui::ui::Vec2 pos = dmui::ui::GetCursorScreenPos(), size{radius * 2, radius * 2}, centre{radius, radius};
@@ -123,359 +144,82 @@ namespace dmui
 	}
 }
 
-void meDMUIClient::RendererGeneralPage()
+namespace UITools
 {
-	auto dataStorage = meDataStorage::GetSingleton();
-	auto uiClient = meDMUIClient::GetSingleton();
-	auto dmuiPlatform = uiClient->client.get();
-
-	DMUI_ThemeColors theme{};
-	auto themeOptional = dmuiPlatform->GetThemeColors();
-	if (themeOptional.has_value())
-		theme = themeOptional.value();
-
-	static int32_t selectedPluginId = -1;
-
-	if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body", 2))
+	static void SpinnerThink(dmui::Client* a_client, const char* a_label)
 	{
-		dmui::ui::TableNextRow();
-		dmui::ui::PushStyleColor(dmui::ui::Color::kText, { .9f, .9f, .9f, 1.f });
-		
-		if (dmui::ui::TableNextColumn())
+		// Bullshit wrapper for imgui dimmy window
+		if (dmui::ui::BeginTable(a_label, 1))
 		{
-			{
-				dmui::FontGuard font{ *dmuiPlatform, DMUI_FONT_ROLE_TITLE };
-				dmui::ui::TextUnformatted(lsGeneralPageNumPlugins);
-			}
+			dmui::ui::TableNextRow();
 
-			dmui::ui::Text("%s:", lsGeneralPageModTotalCaption.GetValue()); dmui::ui::SameLine();
-			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetModCount()); dmui::ui::SameLine();	
-			dmui::ui::Text("/ %s:", lsGeneralPageModRegularCaption.GetValue()); dmui::ui::SameLine();
-			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetDefaultModCount()); dmui::ui::SameLine();
-			dmui::ui::Text("/ %s:", lsGeneralPageModLightCaption.GetValue()); dmui::ui::SameLine();
-			dmui::ui::TextColored(theme.success, "%u", dataStorage->GetLightModCount());
-
-			// Define table flags with vertical scrolling and borders
-			dmui::ui::TableFlags flags =
-				dmui::ui::TableFlags::kScrollY |
-				dmui::ui::TableFlags::kRowBg |
-				dmui::ui::TableFlags::kBorders |
-				dmui::ui::TableFlags::kResizable |
-				dmui::ui::TableFlags::kSizingFixedFit;
-
-			dmui::ui::PushStyleVar(dmui::ui::StyleVar::kItemSpacing, dmui::ui::Vec2(0.0f, 1.0f));
-			dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
-
-			if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body.plugins", 2, flags))
-			{
-				dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, { .0f, .0f, .0f, .0f });
-				dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderActive, { .0f, .0f, .0f, .0f });
-
-				// Freeze the first row (the header) so it stays visible while scrolling
-				dmui::ui::TableSetupScrollFreeze(0, 1);
-
-				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFF");	
+			constexpr auto w = 40.f;
+			auto wndRect = dmui::ui::GetContentRegionAvail();
+			auto posScreen = dmui::ui::GetCursorScreenPos();
+			dmui::ui::SetCursorScreenPos({ posScreen.x + (wndRect.x - w * 2) * .5f, posScreen.y + (wndRect.y - w * 2) * .5f });
+			
+			DMUI_Vec4 color = { 1.f, 1.f, 1.f, 1.f };
+			DMUI_ThemeColors theme{};
+			auto themeOptional = a_client->GetThemeColors();
+			if (themeOptional.has_value())
+				color = themeOptional->info;
 				
-				// Setup columns the header row
-				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
-					dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-					sizeOrderColumn.x + 8.f);
-				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName, 
-					dmui::ui::TableColumnFlags::kWidthStretch);
-				dmui::ui::TableHeadersRow();
-
-				dmui::ui::PopStyleColor(2);
-				const auto colorSelectedRow = dmui::ui::GetStyleColor(dmui::ui::Color::kHeader);
-
-				meDataStorageAutoLock guard(dataStorage);
-
-				try
-				{
-					dmui::ui::ListClipper clipper;
-					clipper.Begin(dataStorage->GetModCount());
-
-					while (clipper.Step())
-					{
-						// Fill table with rows of data
-						for (int32_t row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
-						{
-							auto plugin = dataStorage->GetModByIndex(row);
-							auto is_selected = (selectedPluginId == row);
-
-							if (is_selected)
-								dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, colorSelectedRow);
-
-							dmui::ui::TableNextRow();
-
-							if (dmui::ui::TableNextColumn())
-							{
-								char label[96];
-								sprintf_s(label, "##dearmodding.modexplorer.page.general.body.plugins.row.%d", row);
-								if (dmui::ui::Selectable(label, is_selected, dmui::ui::SelectableFlags::kSpanAllColumns))
-									selectedPluginId = row;
-
-								dmui::ui::SameLine(.0f, .0f);
-
-								if (is_selected)
-									dmui::ui::Text("0x%X", plugin->GetIndex().value());
-								else
-								{
-									if (plugin->GetFile()->IsLight())
-										dmui::ui::TextColored(theme.statusDisable, "0x%X", plugin->GetIndex().value());
-									else
-										dmui::ui::TextColored(theme.accent, "0x%X", plugin->GetIndex().value());
-								}
-							}
-
-							if (dmui::ui::TableNextColumn())
-								dmui::ui::Text(plugin->GetFileName().c_str());
-
-							if (is_selected)
-								dmui::ui::PopStyleColor();
-						}
-					}
-				}
-				catch (...)
-				{}
-
-				dmui::ui::EndTable();
-			}
-
-			dmui::ui::PopStyleVar(2);
+			dmui::spinner::SpinnerFadeBars(w, color, 5.6f, 4, true);
+			dmui::ui::EndTable();
 		}
-		if (dmui::ui::TableNextColumn())
-		{
-			meDataStorageAutoLock guard(dataStorage);
-
-			try
-			{
-				constexpr auto colorHeader = dmui::ui::Vec4(1.f, .85f, .1f, 1.f);
-
-				auto fontSize = dmui::ui::CalcTextSize("A");
-				auto plugin = selectedPluginId == -1 ? nullptr :
-					dataStorage->GetModByIndex(selectedPluginId).get();
-
-				{
-					dmui::FontGuard font{ *dmuiPlatform, DMUI_FONT_ROLE_TITLE };
-					dmui::ui::TextUnformatted(lsGeneralPageInfoCaption);
-				}
-
-				dmui::ui::NewLine();
-
-				if (!plugin)
-				{
-					dmui::ui::PushStyleColor(dmui::ui::Color::kText, theme.error);
-					dmui::ui::TextWrapped(lsGeneralPageModNoSelected);
-					dmui::ui::PopStyleColor();
-				}
-				else
-				{
-					auto GetStr = [&](const std::string& a_str, const char* a_default)
-						{
-							return (a_str.empty() || !a_str.length()) ? a_default : a_str.c_str();
-						};
-
-					dmui::ui::TextColored(colorHeader, "%s: ", lsGeneralPageModAuthorCaption.GetValue().c_str());
-					dmui::ui::SameLine();
-					dmui::ui::TextWrapped(GetStr(plugin->GetAuthor(), lsGeneralPageModInfoNotSpecified));
-					dmui::ui::TextColored(colorHeader, "%s: ", lsGeneralPageModSummaryCaption.GetValue().c_str());
-					dmui::ui::SameLine();
-					dmui::ui::TextWrapped(GetStr(plugin->GetSummary(), lsGeneralPageModInfoNotSpecified));
-
-					// Define table flags with vertical scrolling and borders
-					dmui::ui::TableFlags flags =
-						dmui::ui::TableFlags::kScrollY |
-						dmui::ui::TableFlags::kSizingFixedFit;
-
-					if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body.plugininfo", 2, flags))
-					{
-						// Setup columns the header row
-						dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
-							dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize, 96);
-						dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName,
-							dmui::ui::TableColumnFlags::kWidthStretch);
-
-						constexpr float row_size = 64.f;
-
-						for (auto itemType : meItemTypes)
-						{
-							dmui::ui::TableNextRow(dmui::ui::TableRowFlags::kNone, row_size);
-							if (dmui::ui::TableNextColumn())
-							{
-								switch (itemType)
-								{
-								case meItemType::kArmorItem:
-									dmui::Image(dmuiPlatform, textureArmor, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsArmor);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								case meItemType::kBookItem:
-									dmui::Image(dmuiPlatform, textureBook, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsBook);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								case meItemType::kMiscItem:
-									dmui::Image(dmuiPlatform, textureMisc, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsMisc);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								case meItemType::kWeaponItem:
-									dmui::Image(dmuiPlatform, textureWeapon, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsWeapon);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								case meItemType::kAmmoItem:
-									dmui::Image(dmuiPlatform, textureAmmo, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsAmmo);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								case meItemType::kKeyItem:
-									dmui::Image(dmuiPlatform, textureKey, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsKey);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								case meItemType::kAlchemyItem:
-									dmui::Image(dmuiPlatform, textureAlchemy, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsAlchemy);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								case meItemType::kNoteItem:
-									dmui::Image(dmuiPlatform, textureNote, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsNote);
-										dmui::ui::EndTooltip();
-									}
-									break;
-								default:
-									break;
-								}
-							}
-
-							if (dmui::ui::TableNextColumn())
-							{
-								// Calculate vertical offset
-								float text_height = fontSize.y;
-								float vertical_offset = (row_size - text_height) * 0.5f;
-
-								// Push the cursor down by the offset inside this column
-								dmui::ui::SetCursorPosY(dmui::ui::GetCursorPosY() + vertical_offset);
-
-								//auto clientRect = dmui::ui::GetContentRegionAvail();
-								auto num = plugin->GetItemCount(itemType);
-								if (num)
-									dmui::ui::Text("%u", num);
-								else
-									dmui::ui::TextColored(theme.statusDisable, "-");
-							}
-						}
-
-						dmui::ui::EndTable();
-					}
-				}
-			}
-			catch (...)
-			{}
-		}
-		
-		dmui::ui::PopStyleColor();
-		dmui::ui::EndTable();
 	}
 }
 
-void meDMUIClient::RendererExplorerPage() noexcept
+namespace PageHelper
 {
-	auto dataStorage = meDataStorage::GetSingleton();
-	auto uiClient = meDMUIClient::GetSingleton();
-	auto dmuiPlatform = uiClient->client.get();
-
-	DMUI_ThemeColors theme{};
-	auto themeOptional = dmuiPlatform->GetThemeColors();
-	if (themeOptional.has_value())
-		theme = themeOptional.value();
-
-	static uint16_t countForBuy = 1;
-	static uint16_t countMinForBuy = 1;
-	static uint16_t countMaxForBuy = 500;
-	static uint32_t selectPluginIdList = -1;
-
-	if (no_once_load_items.load())
+	static void DrawPluginTableForShop(dmui::Client* a_client, int32_t& selectPluginIdList, const meModSortedList* a_list = nullptr)
 	{
-		no_once_load_items.store(false);
-		done.store(false);
-		needItemsUpdate.store(true);
-	}
-
-	dmui::ui::Text("%f", dmui::GetTime());
-
-	auto widgetRect = dmui::ui::GetContentRegionAvail();
-
-	if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.explorer.body", 2))
-	{
-		dmui::ui::PushStyleColor(dmui::ui::Color::kText, { .9f, .9f, .9f, 1.f });
-
-		dmui::ui::TableSetupColumn("##dearmodding.modexplorer.page.explorer.body.column_plugings",
-			dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-			widgetRect.x * .33f);
-		dmui::ui::TableSetupColumn("##dearmodding.modexplorer.page.explorer.body.column_shop",
-			dmui::ui::TableColumnFlags::kWidthStretch | dmui::ui::TableColumnFlags::kNoResize);
-
-		dmui::ui::TableNextRow();
-		if (dmui::ui::TableNextColumn())
+		DMUI_Vec4 color = { 1.f, 1.f, 1.f, 1.f };
+		DMUI_Vec4 colorDisable = { .5f, .5f, .5f, 1.f };
+		DMUI_ThemeColors theme{};
+		auto themeOptional = a_client->GetThemeColors();
+		if (themeOptional.has_value())
 		{
-			// Define table flags with vertical scrolling and borders
-			dmui::ui::TableFlags flags =
-				dmui::ui::TableFlags::kScrollY |
-				dmui::ui::TableFlags::kRowBg |
-				dmui::ui::TableFlags::kBorders |
-				dmui::ui::TableFlags::kResizable |
-				dmui::ui::TableFlags::kSizingFixedFit;
+			color = themeOptional->accent;
+			colorDisable = themeOptional->statusDisable;
+		}
 
-			dmui::ui::PushStyleVar(dmui::ui::StyleVar::kItemSpacing, dmui::ui::Vec2(0.0f, 1.0f));
-			dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
+		auto dataStorage = meDataStorage::GetSingleton();
 
-			if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.explorer.body.plugins", 2, flags))
+		// Define table flags with vertical scrolling and borders
+		dmui::ui::TableFlags flags =
+			dmui::ui::TableFlags::kScrollY |
+			dmui::ui::TableFlags::kRowBg |
+			dmui::ui::TableFlags::kBorders |
+			dmui::ui::TableFlags::kResizable |
+			dmui::ui::TableFlags::kSizingFixedFit;
+
+		dmui::ui::PushStyleVar(dmui::ui::StyleVar::kItemSpacing, dmui::ui::Vec2(0.0f, 1.0f));
+		dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
+
+		if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.explorer.body.plugins", 2, flags))
+		{
+			dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, { .0f, .0f, .0f, .0f });
+			dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderActive, { .0f, .0f, .0f, .0f });
+
+			// Freeze the first row (the header) so it stays visible while scrolling
+			dmui::ui::TableSetupScrollFreeze(0, 1);
+
+			auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFFZ");
+
+			// Setup columns the header row
+			dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
+				dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
+				sizeOrderColumn.x);
+			dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName,
+				dmui::ui::TableColumnFlags::kWidthStretch);
+			dmui::ui::TableHeadersRow();
+
+			dmui::ui::PopStyleColor(2);
+			const auto colorSelectedRow = dmui::ui::GetStyleColor(dmui::ui::Color::kHeader);
+
+			if (!a_list)
 			{
-				dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, { .0f, .0f, .0f, .0f });
-				dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderActive, { .0f, .0f, .0f, .0f });
-
-				// Freeze the first row (the header) so it stays visible while scrolling
-				dmui::ui::TableSetupScrollFreeze(0, 1);
-
-				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFFZ");
-
-				// Setup columns the header row
-				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
-					dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-					sizeOrderColumn.x);
-				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName,
-					dmui::ui::TableColumnFlags::kWidthStretch);
-				dmui::ui::TableHeadersRow();
-
-				dmui::ui::PopStyleColor(2);
-				const auto colorSelectedRow = dmui::ui::GetStyleColor(dmui::ui::Color::kHeader);
-
 				meDataStorageAutoLock guard(dataStorage);
 
 				try
@@ -515,7 +259,7 @@ void meDMUIClient::RendererExplorerPage() noexcept
 									if (is_selected)
 										dmui::ui::Text(ALL_INDEX);
 									else
-										dmui::ui::TextColored(theme.accent, ALL_INDEX);
+										dmui::ui::TextColored(color, ALL_INDEX);
 								}
 
 								if (dmui::ui::TableNextColumn())
@@ -547,9 +291,9 @@ void meDMUIClient::RendererExplorerPage() noexcept
 									else
 									{
 										if (plugin->GetFile()->IsLight())
-											dmui::ui::TextColored(theme.statusDisable, "0x%X", plugin->GetIndex().value());
+											dmui::ui::TextColored(colorDisable, "0x%X", plugin->GetIndex().value());
 										else
-											dmui::ui::TextColored(theme.accent, "0x%X", plugin->GetIndex().value());
+											dmui::ui::TextColored(color, "0x%X", plugin->GetIndex().value());
 									}
 								}
 
@@ -564,61 +308,133 @@ void meDMUIClient::RendererExplorerPage() noexcept
 				}
 				catch (...)
 				{}
+			}
+			else
+			{
+				meDataStorageAutoLock guard(dataStorage);
 
-				dmui::ui::EndTable();
+				dmui::ui::ListClipper clipper;
+				clipper.Begin(static_cast<int32_t>(a_list->size()));
+
+				while (clipper.Step())
+				{
+					// Fill table with rows of data
+					for (int32_t row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
+					{
+						auto is_selected = (selectPluginIdList == row);
+						if (is_selected)
+							dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, colorSelectedRow);
+
+						auto& plugin = a_list->at(row);
+
+						dmui::ui::TableNextRow();
+						if (dmui::ui::TableNextColumn())
+						{
+							char label[96];
+							sprintf_s(label, "##dearmodding.modexplorer.page.explorer.body.plugins.row.%d", row);
+							if (dmui::ui::Selectable(label, is_selected, dmui::ui::SelectableFlags::kSpanAllColumns))
+								if (!needItemsUpdate.load())
+								{
+									done.store(false);
+									selectPluginIdList = row;
+									const auto& items = dataStorage->GetModShopList();
+									auto& mod = a_list->at(selectPluginIdList);
+									auto it = std::find_if(items.cbegin(), items.cend(), [&mod](const std::shared_ptr<meModStorage>& ptr) {
+										return ptr && ptr->GetFile() == mod->GetFile();
+										});
+
+									if (it == items.cend())
+										selectedShopPluginId.store(-1);
+									else
+										selectedShopPluginId.store(static_cast<int32_t>(std::distance(items.cbegin(), it)));
+
+									needItemsUpdate.store(true);
+								}
+
+							dmui::ui::SameLine(.0f, .0f);
+
+							if (is_selected)
+								dmui::ui::Text("0x%X", plugin->GetIndex().value());
+							else
+							{
+								if (plugin->GetFile()->IsLight())
+									dmui::ui::TextColored(colorDisable, "0x%X", plugin->GetIndex().value());
+								else
+									dmui::ui::TextColored(color, "0x%X", plugin->GetIndex().value());
+							}
+						}
+
+						if (dmui::ui::TableNextColumn())
+							dmui::ui::Text(plugin->GetFileName().c_str());
+
+						if (is_selected)
+							dmui::ui::PopStyleColor();
+					}
+				}
 			}
 
-			dmui::ui::PopStyleVar(2);
+			dmui::ui::EndTable();
 		}
 
-		if (dmui::ui::TableNextColumn())
-		{
-			auto clientRect = dmui::ui::GetContentRegionAvail();
+		dmui::ui::PopStyleVar(2);
+	}
+}
+
+void meDMUIClient::RendererGeneralPage()
+{
+	updateFrame.store(true);
+
+	auto dataStorage = meDataStorage::GetSingleton();
+	auto uiClient = meDMUIClient::GetSingleton();
+	auto dmuiPlatform = uiClient->client.get();
+
+	DMUI_ThemeColors theme{};
+	auto themeOptional = dmuiPlatform->GetThemeColors();
+	if (themeOptional.has_value())
+		theme = themeOptional.value();
+
+	static int32_t selectedPluginId = -1;
 	
-			auto prevColor = dmui::ui::GetStyleColor(dmui::ui::Color::kButton);
-			dmui::ui::PushStyleColor(dmui::ui::Color::kButton, theme.statusDisable);
+	if (updatePlugins.load())
+	{
+		// Reset
+		selectedPluginId = -1;
 
-			auto currentBtnType = selectedShopTypeId.load();
-			auto createBtn = [&](const std::string& a_id, std::int8_t a_typeId) {
-				if (currentBtnType == a_typeId)
-					dmui::ui::PushStyleColor(dmui::ui::Color::kButton, prevColor);
-				if (dmui::ui::Button(a_id.c_str()))
-				{
-					done.store(false);
-					selectedShopTypeId.store(a_typeId);
-					needItemsUpdate.store(true);
-				}
-				if (currentBtnType == a_typeId)
-					dmui::ui::PopStyleColor();
-				};
+		UITools::SpinnerThink(dmuiPlatform, "##dearmodding.modexplorer.page.general.dimmy");
+	}
+	else
+	{
+		if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body", 2))
+		{
+			dmui::ui::TableNextRow();
+			dmui::ui::PushStyleColor(dmui::ui::Color::kText, { .9f, .9f, .9f, 1.f });
 
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.all", lsAll.GetValue()), -1); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.armor", lsArmor.GetValue()), 0); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.book", lsBook.GetValue()), 1); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.misc", lsMisc.GetValue()), 2); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.weapon", lsWeapon.GetValue()), 3); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.ammo", lsAmmo.GetValue()), 4); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.key", lsKey.GetValue()), 5); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.alchemy", lsAlchemy.GetValue()), 6); dmui::ui::SameLine();
-			createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.note", lsNote.GetValue()), 7);
-
-			dmui::ui::PopStyleColor();
-
-			if (!needItemsUpdate.load() && done.load())
+			if (dmui::ui::TableNextColumn())
 			{
+				{
+					dmui::FontGuard font{ *dmuiPlatform, DMUI_FONT_ROLE_TITLE };
+					dmui::ui::TextUnformatted(lsGeneralPageNumPlugins);
+				}
+
+				dmui::ui::Text("%s:", lsGeneralPageModTotalCaption.GetValue()); dmui::ui::SameLine();
+				dmui::ui::TextColored(theme.success, "%u", dataStorage->GetModCount()); dmui::ui::SameLine();
+				dmui::ui::Text("/ %s:", lsGeneralPageModRegularCaption.GetValue()); dmui::ui::SameLine();
+				dmui::ui::TextColored(theme.success, "%u", dataStorage->GetDefaultModCount()); dmui::ui::SameLine();
+				dmui::ui::Text("/ %s:", lsGeneralPageModLightCaption.GetValue()); dmui::ui::SameLine();
+				dmui::ui::TextColored(theme.success, "%u", dataStorage->GetLightModCount());
+
 				// Define table flags with vertical scrolling and borders
 				dmui::ui::TableFlags flags =
 					dmui::ui::TableFlags::kScrollY |
 					dmui::ui::TableFlags::kRowBg |
 					dmui::ui::TableFlags::kBorders |
-					dmui::ui::TableFlags::kResizable;
+					dmui::ui::TableFlags::kResizable |
+					dmui::ui::TableFlags::kSizingFixedFit;
 
 				dmui::ui::PushStyleVar(dmui::ui::StyleVar::kItemSpacing, dmui::ui::Vec2(0.0f, 1.0f));
 				dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
 
-				auto avail = dmui::ui::GetContentRegionAvail();
-				if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.explorer.body.items", 4, flags,
-					{ -1.f, avail.y - (clientRect.y - avail.y) }))
+				if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body.plugins", 2, flags))
 				{
 					dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, { .0f, .0f, .0f, .0f });
 					dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderActive, { .0f, .0f, .0f, .0f });
@@ -626,131 +442,554 @@ void meDMUIClient::RendererExplorerPage() noexcept
 					// Freeze the first row (the header) so it stays visible while scrolling
 					dmui::ui::TableSetupScrollFreeze(0, 1);
 
-					auto sizeOrderColumn = dmui::ui::CalcTextSize("0xXXYYZZFF");
-					sizeOrderColumn.x += 8.f;
-					sizeOrderColumn.y += 2.f;
-					auto width_2_column = sizeOrderColumn.x * 1.2f;
+					auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFF");
 
 					// Setup columns the header row
-					dmui::ui::TableSetupColumn("",
+					dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
 						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-						30.f);
-					dmui::ui::TableSetupColumn("",
-						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-						sizeOrderColumn.x);
-					dmui::ui::TableSetupColumn(lsType,
-						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-						width_2_column);
-					dmui::ui::TableSetupColumn(lsFullname,
+						sizeOrderColumn.x + 8.f);
+					dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName,
 						dmui::ui::TableColumnFlags::kWidthStretch);
-
-					dmui::ui::TableNextRow(dmui::ui::TableRowFlags::kHeaders, sizeOrderColumn.y * 1.5f - 3.f);
-					(void)dmui::ui::TableSetColumnIndex(1);
-					auto s_header = dmui::ui::GetCursorScreenPos();
-					dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
-					dmui::ui::Text("FormID", sizeOrderColumn.y);
-					(void)dmui::ui::TableSetColumnIndex(2);
-					s_header = dmui::ui::GetCursorScreenPos();
-					dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
-					dmui::ui::TextAligned(.5f, width_2_column, lsType.GetValue());
-					(void)dmui::ui::TableSetColumnIndex(3);
-					s_header = dmui::ui::GetCursorScreenPos();
-					dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
-					dmui::ui::Text(lsFullname);
+					dmui::ui::TableHeadersRow();
 
 					dmui::ui::PopStyleColor(2);
 					const auto colorSelectedRow = dmui::ui::GetStyleColor(dmui::ui::Color::kHeader);
 
-					dmui::ui::ListClipper clipper;
-					clipper.Begin(static_cast<int32_t>(itemShopList.size()));
+					meDataStorageAutoLock guard(dataStorage);
 
-					while (clipper.Step())
+					try
 					{
-						// Fill table with rows of data
-						for (int32_t row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
+						dmui::ui::ListClipper clipper;
+						clipper.Begin(dataStorage->GetModCount());
+
+						while (clipper.Step())
 						{
-							auto& item = itemShopList[row];
-
-							dmui::ui::TableNextRow();
-
-							if (dmui::ui::TableNextColumn() && item.flag.all(meItemFlag::kQuestItem))
+							// Fill table with rows of data
+							for (int32_t row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
 							{
-								dmui::Image(dmuiPlatform, textureStar, sizeOrderColumn.y, sizeOrderColumn.y);
-							}
+								auto plugin = dataStorage->GetModByIndex(row);
+								auto is_selected = (selectedPluginId == row);
 
-							if (dmui::ui::TableNextColumn())
-								dmui::ui::Text("0x%08X", item.formId);
+								if (is_selected)
+									dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, colorSelectedRow);
 
-							if (dmui::ui::TableNextColumn())
-							{
-								dmui::ui::PushStyleColor(dmui::ui::Color::kText, theme.info);
-								
-								switch (item.type)
+								dmui::ui::TableNextRow();
+
+								if (dmui::ui::TableNextColumn())
 								{
-								case meItemType::kArmorItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsArmor.GetValue());
-									break;
-								case meItemType::kBookItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsBook.GetValue());
-									break;
-								case meItemType::kMiscItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsMisc.GetValue());
-									break;
-								case meItemType::kWeaponItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsWeapon.GetValue());
-									break;
-								case meItemType::kAmmoItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsAmmo.GetValue());
-									break;
-								case meItemType::kKeyItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsKey.GetValue());
-									break;
-								case meItemType::kAlchemyItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsAlchemy.GetValue());
-									break;
-								case meItemType::kNoteItem:
-									dmui::ui::TextAligned(.5f, width_2_column, lsNote.GetValue());
-									break;
-								default:
-									dmui::ui::TextAligned(.5f, width_2_column, "-");
-									break;
+									char label[96];
+									sprintf_s(label, "##dearmodding.modexplorer.page.general.body.plugins.row.%d", row);
+									if (dmui::ui::Selectable(label, is_selected, dmui::ui::SelectableFlags::kSpanAllColumns))
+										selectedPluginId = row;
+
+									dmui::ui::SameLine(.0f, .0f);
+
+									if (is_selected)
+										dmui::ui::Text("0x%X", plugin->GetIndex().value());
+									else
+									{
+										if (plugin->GetFile()->IsLight())
+											dmui::ui::TextColored(theme.statusDisable, "0x%X", plugin->GetIndex().value());
+										else
+											dmui::ui::TextColored(theme.accent, "0x%X", plugin->GetIndex().value());
+									}
 								}
 
-								dmui::ui::PopStyleColor();
-							}
+								if (dmui::ui::TableNextColumn())
+									dmui::ui::Text(plugin->GetFileName().c_str());
 
-							if (dmui::ui::TableNextColumn())
-								dmui::ui::Text("%s", item.name.c_str());
+								if (is_selected)
+									dmui::ui::PopStyleColor();
+							}
 						}
+					}
+					catch (...)
+					{
 					}
 
 					dmui::ui::EndTable();
 				}
 
-				(void)dmui::ui::Button("All##dearmodding.modexplorer.page.explorer.body.buttons.buy");			dmui::ui::SameLine();
-				(void)dmui::ui::SliderScalar("Count##dearmodding.modexplorer.page.explorer.body.buttons.count",
-					std::addressof(countForBuy), std::addressof(countMinForBuy), std::addressof(countMaxForBuy));
-
 				dmui::ui::PopStyleVar(2);
 			}
-			else
+			if (dmui::ui::TableNextColumn())
 			{
-				constexpr auto w = 40.f;
-				auto wndRect = dmui::ui::GetContentRegionAvail();
-				auto posScreen = dmui::ui::GetCursorScreenPos();
-				dmui::ui::SetCursorScreenPos({ posScreen.x + (wndRect.x - w * 2) * .5f, posScreen.y + (wndRect.y - w * 2) * .5f });
-				dmui::spinner::SpinnerFadeBars(w, theme.info, 5.6f, 4, true);
+				meDataStorageAutoLock guard(dataStorage);
+
+				try
+				{
+					constexpr auto colorHeader = dmui::ui::Vec4(1.f, .85f, .1f, 1.f);
+
+					auto fontSize = dmui::ui::CalcTextSize("A");
+					auto plugin = selectedPluginId == -1 ? nullptr :
+						dataStorage->GetModByIndex(selectedPluginId).get();
+
+					{
+						dmui::FontGuard font{ *dmuiPlatform, DMUI_FONT_ROLE_TITLE };
+						dmui::ui::TextUnformatted(lsGeneralPageInfoCaption);
+					}
+
+					dmui::ui::NewLine();
+
+					if (!plugin)
+					{
+						dmui::ui::PushStyleColor(dmui::ui::Color::kText, theme.error);
+						dmui::ui::TextWrapped(lsGeneralPageModNoSelected);
+						dmui::ui::PopStyleColor();
+					}
+					else
+					{
+						auto GetStr = [&](const std::string& a_str, const char* a_default)
+							{
+								return (a_str.empty() || !a_str.length()) ? a_default : a_str.c_str();
+							};
+
+						dmui::ui::TextColored(colorHeader, "%s: ", lsGeneralPageModAuthorCaption.GetValue().c_str());
+						dmui::ui::SameLine();
+						dmui::ui::TextWrapped(GetStr(plugin->GetAuthor(), lsGeneralPageModInfoNotSpecified));
+						dmui::ui::TextColored(colorHeader, "%s: ", lsGeneralPageModSummaryCaption.GetValue().c_str());
+						dmui::ui::SameLine();
+						dmui::ui::TextWrapped(GetStr(plugin->GetSummary(), lsGeneralPageModInfoNotSpecified));
+
+						// Define table flags with vertical scrolling and borders
+						dmui::ui::TableFlags flags =
+							dmui::ui::TableFlags::kScrollY |
+							dmui::ui::TableFlags::kSizingFixedFit;
+
+						if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.general.body.plugininfo", 2, flags))
+						{
+							// Setup columns the header row
+							dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
+								dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize, 96);
+							dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsName,
+								dmui::ui::TableColumnFlags::kWidthStretch);
+
+							constexpr float row_size = 64.f;
+
+							for (auto itemType : meItemTypes)
+							{
+								dmui::ui::TableNextRow(dmui::ui::TableRowFlags::kNone, row_size);
+								if (dmui::ui::TableNextColumn())
+								{
+									switch (itemType)
+									{
+									case meItemType::kArmorItem:
+										dmui::Image(dmuiPlatform, textureArmor, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsArmor);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									case meItemType::kBookItem:
+										dmui::Image(dmuiPlatform, textureBook, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsBook);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									case meItemType::kMiscItem:
+										dmui::Image(dmuiPlatform, textureMisc, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsMisc);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									case meItemType::kWeaponItem:
+										dmui::Image(dmuiPlatform, textureWeapon, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsWeapon);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									case meItemType::kAmmoItem:
+										dmui::Image(dmuiPlatform, textureAmmo, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsAmmo);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									case meItemType::kKeyItem:
+										dmui::Image(dmuiPlatform, textureKey, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsKey);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									case meItemType::kAlchemyItem:
+										dmui::Image(dmuiPlatform, textureAlchemy, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsAlchemy);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									case meItemType::kNoteItem:
+										dmui::Image(dmuiPlatform, textureNote, row_size, row_size);
+										if (dmui::ui::BeginItemTooltip())
+										{
+											dmui::ui::Text(lsNote);
+											dmui::ui::EndTooltip();
+										}
+										break;
+									default:
+										break;
+									}
+								}
+
+								if (dmui::ui::TableNextColumn())
+								{
+									// Calculate vertical offset
+									float text_height = fontSize.y;
+									float vertical_offset = (row_size - text_height) * 0.5f;
+
+									// Push the cursor down by the offset inside this column
+									dmui::ui::SetCursorPosY(dmui::ui::GetCursorPosY() + vertical_offset);
+
+									//auto clientRect = dmui::ui::GetContentRegionAvail();
+									auto num = plugin->GetItemCount(itemType);
+									if (num)
+										dmui::ui::Text("%u", num);
+									else
+										dmui::ui::TextColored(theme.statusDisable, "-");
+								}
+							}
+
+							dmui::ui::EndTable();
+						}
+					}
+				}
+				catch (...)
+				{}
 			}
+
+			dmui::ui::PopStyleColor();
+			dmui::ui::EndTable();
+		}
+	}
+
+	updateFrame.store(false);
+}
+
+void meDMUIClient::RendererExplorerPage() noexcept
+{
+	updateFrame.store(true);
+
+	auto dataStorage = meDataStorage::GetSingleton();
+	auto uiClient = meDMUIClient::GetSingleton();
+	auto dmuiPlatform = uiClient->client.get();
+
+	DMUI_ThemeColors theme{};
+	auto themeOptional = dmuiPlatform->GetThemeColors();
+	if (themeOptional.has_value())
+		theme = themeOptional.value();
+
+	DMUI_StyleMetrics metrics{};
+	(void)dmui::ui::GetStyleMetrics(metrics);
+
+	static uint16_t countForBuy = 1;
+	static uint16_t countMinForBuy = 1;
+	static uint16_t countMaxForBuy = 500;
+	static int32_t selectPluginIdList = -1;
+	
+	static dmui::ui::Vec2 sizeSearchText{};
+	static dmui::ui::Vec2 sizeCountText{};
+
+	if (updatePlugins.load())
+	{
+		// Reset
+		selectPluginIdList = -1;
+		selectedShopPluginId.store(-1);
+
+		UITools::SpinnerThink(dmuiPlatform, "##dearmodding.modexplorer.page.explorer.dimmy1");
+	}
+	else
+	{
+		if (no_once_load_items.load())
+		{
+			no_once_load_items.store(false);
+			sizeSearchText = dmui::ui::CalcTextSize(std::format("{}: ", lsSearch.GetValue()));
+			sizeCountText = dmui::ui::CalcTextSize(std::format("{}: ", lsExplorerPageCount.GetValue()));
+			done.store(false);
+			needItemsUpdate.store(true);
+			selectPluginIdList = 0;
 		}
 
-		dmui::ui::PopStyleColor();
-		dmui::ui::EndTable();
+		auto widgetRect = dmui::ui::GetContentRegionAvail();
+
+		if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.explorer.body", 2))
+		{
+			dmui::ui::PushStyleColor(dmui::ui::Color::kText, { .9f, .9f, .9f, 1.f });
+
+			auto width_main_column_1 = widgetRect.x * .33f;
+
+			dmui::ui::TableSetupColumn("##dearmodding.modexplorer.page.explorer.body.column_plugings",
+				dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
+				width_main_column_1);
+			dmui::ui::TableSetupColumn("##dearmodding.modexplorer.page.explorer.body.column_shop",
+				dmui::ui::TableColumnFlags::kWidthStretch | dmui::ui::TableColumnFlags::kNoResize);
+
+			dmui::ui::TableNextRow();
+			if (dmui::ui::TableNextColumn())
+			{
+				auto safeY = dmui::ui::GetCursorPosY();
+				dmui::ui::SetCursorPosY(safeY + metrics.framePadding.y);
+				dmui::ui::Text("%s:", lsSearch.GetValue()); dmui::ui::SameLine();
+				dmui::ui::SetCursorPosY(safeY);
+				dmui::ui::SetNextItemWidth(width_main_column_1 - sizeSearchText.x);
+				if (dmui::ui::InputText("##dearmodding.modexplorer.page.explorer.body.searchinput.plugins",
+					textExplorerSearchPlugin.data(), textExplorerSearchPlugin.size(), dmui::ui::InputTextFlags::kEnterReturnsTrue))
+				{
+					selectPluginIdList = -1;
+					selectedShopPluginId.store(-1);
+					itemShopList.clear();
+
+					memcpy_s(textExplorerSearchPluginDone.data(), textExplorerSearchPluginDone.size(),
+						textExplorerSearchPlugin.data(), textExplorerSearchPlugin.size());
+
+					if (!textExplorerSearchPluginDone[0])
+					{
+						selectPluginIdList = 0;
+						done.store(false);
+						needItemsUpdate.store(true);
+					}
+					else
+					{
+						done.store(false);
+						updateSearchPlugins.store(true);
+					}
+				}
+
+				// dmui::ui::Text("selectedShopPluginId: %d", selectedShopPluginId.load());
+
+				if (textExplorerSearchPluginDone[0])
+				{
+					if (updateSearchPlugins.load() && !done.load())
+						UITools::SpinnerThink(dmuiPlatform, "##dearmodding.modexplorer.page.explorer.dimmy3");
+					else if (!updateSearchPlugins.load())
+						PageHelper::DrawPluginTableForShop(dmuiPlatform, selectPluginIdList, std::addressof(pluginSearchShopList));			
+				}
+				else
+					PageHelper::DrawPluginTableForShop(dmuiPlatform, selectPluginIdList);
+			}
+
+			if (dmui::ui::TableNextColumn())
+			{
+				auto clientRect = dmui::ui::GetContentRegionAvail();
+
+				auto prevColor = dmui::ui::GetStyleColor(dmui::ui::Color::kButton);
+				dmui::ui::PushStyleColor(dmui::ui::Color::kButton, theme.statusDisable);
+
+				auto currentBtnType = selectedShopTypeId.load();
+				auto createBtn = [&](const std::string& a_id, std::int8_t a_typeId) {
+					if (currentBtnType == a_typeId)
+						dmui::ui::PushStyleColor(dmui::ui::Color::kButton, prevColor);
+					if (dmui::ui::Button(a_id.c_str()))
+					{
+						done.store(false);
+						selectedShopTypeId.store(a_typeId);
+						needItemsUpdate.store(true);
+					}
+					if (currentBtnType == a_typeId)
+						dmui::ui::PopStyleColor();
+					};
+
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.all", lsAll.GetValue()), -1); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.armor", lsArmor.GetValue()), 0); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.book", lsBook.GetValue()), 1); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.misc", lsMisc.GetValue()), 2); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.weapon", lsWeapon.GetValue()), 3); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.ammo", lsAmmo.GetValue()), 4); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.key", lsKey.GetValue()), 5); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.alchemy", lsAlchemy.GetValue()), 6); dmui::ui::SameLine();
+				createBtn(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.note", lsNote.GetValue()), 7);
+
+				dmui::ui::PopStyleColor();
+
+				auto safeY = dmui::ui::GetCursorPosY();
+				dmui::ui::SetCursorPosY(safeY + metrics.framePadding.y);
+				dmui::ui::Text("%s:", lsSearch.GetValue()); dmui::ui::SameLine();
+				dmui::ui::SetCursorPosY(safeY);
+				dmui::ui::SetNextItemWidth(clientRect.x - sizeSearchText.x);
+				if (dmui::ui::InputText("##dearmodding.modexplorer.page.explorer.body.searchinput.items",
+					textSearchItem.data(), textSearchItem.size()))
+				{
+
+					//printf("Text changed to: %s\n", text_buffer);
+				}
+
+				if (!needItemsUpdate.load() && done.load())
+				{
+					// Define table flags with vertical scrolling and borders
+					dmui::ui::TableFlags flags =
+						dmui::ui::TableFlags::kScrollY |
+						dmui::ui::TableFlags::kRowBg |
+						dmui::ui::TableFlags::kBorders |
+						dmui::ui::TableFlags::kResizable;
+
+					dmui::ui::PushStyleVar(dmui::ui::StyleVar::kItemSpacing, dmui::ui::Vec2(0.0f, 1.0f));
+					dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
+
+					auto avail = dmui::ui::GetContentRegionAvail();
+					if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.explorer.body.items", 4, flags,
+						{ -1.f, avail.y - (sizeSearchText.y + (metrics.framePadding.y * 3) + 6.f) }))
+					{
+						dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, { .0f, .0f, .0f, .0f });
+						dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderActive, { .0f, .0f, .0f, .0f });
+
+						// Freeze the first row (the header) so it stays visible while scrolling
+						dmui::ui::TableSetupScrollFreeze(0, 1);
+
+						auto sizeOrderColumn = dmui::ui::CalcTextSize("0xXXYYZZFF");
+						sizeOrderColumn.x += 8.f;
+						sizeOrderColumn.y += 2.f;
+						auto width_2_column = sizeOrderColumn.x * 1.2f;
+
+						// Setup columns the header row
+						dmui::ui::TableSetupColumn("",
+							dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
+							30.f);
+						dmui::ui::TableSetupColumn("",
+							dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
+							sizeOrderColumn.x);
+						dmui::ui::TableSetupColumn(lsType,
+							dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
+							width_2_column);
+						dmui::ui::TableSetupColumn(lsFullname,
+							dmui::ui::TableColumnFlags::kWidthStretch);
+
+						dmui::ui::TableNextRow(dmui::ui::TableRowFlags::kHeaders, sizeOrderColumn.y * 1.5f - 3.f);
+						(void)dmui::ui::TableSetColumnIndex(1);
+						auto s_header = dmui::ui::GetCursorScreenPos();
+						dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
+						dmui::ui::Text("FormID", sizeOrderColumn.y);
+						(void)dmui::ui::TableSetColumnIndex(2);
+						s_header = dmui::ui::GetCursorScreenPos();
+						dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
+						dmui::ui::TextAligned(.5f, width_2_column, lsType.GetValue());
+						(void)dmui::ui::TableSetColumnIndex(3);
+						s_header = dmui::ui::GetCursorScreenPos();
+						dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
+						dmui::ui::Text(lsFullname);
+
+						dmui::ui::PopStyleColor(2);
+						const auto colorSelectedRow = dmui::ui::GetStyleColor(dmui::ui::Color::kHeader);
+
+						dmui::ui::ListClipper clipper;
+						clipper.Begin(static_cast<int32_t>(itemShopList.size()));
+
+						while (clipper.Step())
+						{
+							// Fill table with rows of data
+							for (int32_t row = clipper.DisplayStart; row < clipper.DisplayEnd; row++)
+							{
+								auto& item = itemShopList[row];
+
+								dmui::ui::TableNextRow();
+
+								if (dmui::ui::TableNextColumn() && item.flag.all(meItemFlag::kQuestItem))
+								{
+									dmui::Image(dmuiPlatform, textureStar, sizeOrderColumn.y, sizeOrderColumn.y);
+								}
+
+								if (dmui::ui::TableNextColumn())
+									dmui::ui::Text("0x%08X", item.formId);
+
+								if (dmui::ui::TableNextColumn())
+								{
+									dmui::ui::PushStyleColor(dmui::ui::Color::kText, theme.info);
+
+									switch (item.type)
+									{
+									case meItemType::kArmorItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsArmor.GetValue());
+										break;
+									case meItemType::kBookItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsBook.GetValue());
+										break;
+									case meItemType::kMiscItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsMisc.GetValue());
+										break;
+									case meItemType::kWeaponItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsWeapon.GetValue());
+										break;
+									case meItemType::kAmmoItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsAmmo.GetValue());
+										break;
+									case meItemType::kKeyItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsKey.GetValue());
+										break;
+									case meItemType::kAlchemyItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsAlchemy.GetValue());
+										break;
+									case meItemType::kNoteItem:
+										dmui::ui::TextAligned(.5f, width_2_column, lsNote.GetValue());
+										break;
+									default:
+										dmui::ui::TextAligned(.5f, width_2_column, "-");
+										break;
+									}
+
+									dmui::ui::PopStyleColor();
+								}
+
+								if (dmui::ui::TableNextColumn())
+									dmui::ui::Text("%s", item.name.c_str());
+							}
+						}
+
+						dmui::ui::EndTable();
+					}
+
+					dmui::ui::PopStyleVar(2);
+
+					dmui::ui::Dummy({ 0.f, 0.f });
+					auto posXCount = dmui::ui::GetCursorPosX();
+					dmui::ui::BeginDisabled();
+					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.show",
+						lsExplorerPageShowModel.GetValue()).c_str());
+					dmui::ui::SameLine();
+					dmui::ui::EndDisabled();
+					dmui::ui::BeginDisabled();
+					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buyall",
+						lsExplorerPageBuyAll.GetValue()).c_str());
+					dmui::ui::SameLine();
+					dmui::ui::EndDisabled();
+					dmui::ui::BeginDisabled();
+					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buy",
+						lsExplorerPageBuy.GetValue()).c_str());
+					dmui::ui::SameLine(0, 30.f);
+					posXCount = dmui::ui::GetCursorPosX() - posXCount;
+					dmui::ui::Text(lsExplorerPageCount); dmui::ui::SameLine();
+					dmui::ui::SetNextItemWidth(avail.x - sizeCountText.x - posXCount);
+					(void)dmui::ui::SliderScalar("##dearmodding.modexplorer.page.explorer.body.buttons.count",
+						std::addressof(countForBuy), std::addressof(countMinForBuy), std::addressof(countMaxForBuy));
+					dmui::ui::EndDisabled();
+				}
+				else if (needItemsUpdate.load() && !done.load())
+					UITools::SpinnerThink(dmuiPlatform, "##dearmodding.modexplorer.page.explorer.dimmy2");
+			}
+
+			dmui::ui::PopStyleColor();
+			dmui::ui::EndTable();
+		}
 	}
+
+	updateFrame.store(false);
 }
 
 void meDMUIClient::RendererBasketPage() noexcept
 {
+	updateFrame.store(true);
+
 	dmui::ui::TextUnformatted("Hello World!");
+
+	updateFrame.store(false);
 }
 
 std::string meDMUIClient::GetLocalizeFileName() const noexcept
@@ -904,16 +1143,19 @@ bool meDMUIClient::Connect() noexcept
 	REX::INFO("meDMUIClient::Connect() Registered as '{}' with the dmui host"sv, kClientId);
 
 	std::thread([]() {
+		REX::FTimer timer;
 		auto dataStorage = meDataStorage::GetSingleton();
 		while (!terminated.load())
 		{
-			std::this_thread::sleep_for(20ms);
+			// don't load the process too much
+			std::this_thread::sleep_for(50ms);
 
 			if (!done.load())
 			{
 				if (needItemsUpdate.load())
 				{
 					meDataStorageAutoLock guard(dataStorage);
+					timer.Start();
 
 					try
 					{
@@ -993,9 +1235,39 @@ bool meDMUIClient::Connect() noexcept
 					catch (...)
 					{}
 
-					std::this_thread::sleep_for(2000ms);
+					timer.Stop();
+
+					// protection against epileptics
+					auto duration = timer.GetDuration<std::chrono::milliseconds>();
+					if (duration < 750)
+						std::this_thread::sleep_for((750 - duration) * 1ms);
 
 					needItemsUpdate.store(false);
+					done.store(true);
+				}
+				if (updateSearchPlugins.load())
+				{
+					meDataStorageAutoLock guard(dataStorage);
+					timer.Start();
+					pluginSearchShopList.clear();
+
+					try
+					{
+						for (auto& mod : dataStorage->GetModShopList())
+							if (StrStrIA(mod->GetFileName().c_str(), textExplorerSearchPluginDone.data()))
+								pluginSearchShopList.push_back(mod);
+					}
+					catch (...)
+					{}
+
+					timer.Stop();
+
+					// protection against epileptics
+					auto duration = timer.GetDuration<std::chrono::milliseconds>();
+					if (duration < 750)
+						std::this_thread::sleep_for((750 - duration) * 1ms);
+
+					updateSearchPlugins.store(false);
 					done.store(true);
 				}
 			}
@@ -1003,4 +1275,19 @@ bool meDMUIClient::Connect() noexcept
 		}).detach();
 
 	return true;
+}
+
+void meDMUIClient::BeginUpdate() noexcept
+{
+	while (updateFrame.load()) { std::this_thread::yield(); }
+	done.store(false);
+	updatePlugins.store(true);
+}
+
+void meDMUIClient::EndUpdate() noexcept
+{
+	pluginSearchShopList.clear();
+
+	updatePlugins.store(false);
+	done.store(true);
 }

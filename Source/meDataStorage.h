@@ -123,6 +123,9 @@ public:
 
 	meDataStorage() = default;
 
+	const meModSortedList& GetModList() const noexcept { return sortedMods; };
+	const meModSortedList& GetModShopList() const noexcept { return sortedShopMods; };
+
 	uint32_t GetModCount() const noexcept;
 	uint32_t GetModForShopCount() const noexcept;
 	const std::shared_ptr<meModStorage> GetMod(const std::string& a_filename) const noexcept;

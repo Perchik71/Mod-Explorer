@@ -31,4 +31,6 @@ public:
 	~meDMUIClient();
 
 	bool Connect() noexcept;
+	void BeginUpdate() noexcept;
+	void EndUpdate() noexcept;
 };
