@@ -6,6 +6,7 @@
 
 #include <RE/S/Setting.h>
 #include <atomic>
+#include <numbers>
 
 // Common
 static dmui::localize::LocalizeString lsGeneralCategory("$GeneralCategory", "General");
@@ -55,6 +56,7 @@ static std::shared_ptr<dmui::Texture> textureAlchemy{};
 static std::shared_ptr<dmui::Texture> textureNote{};
 static std::shared_ptr<dmui::Texture> textureStar{};
 
+static std::atomic_bool no_once_load_items = true;
 static std::atomic_bool done = true;
 static std::atomic_bool terminated = false;
 static std::atomic_bool needItemsUpdate = false;
@@ -80,6 +82,44 @@ namespace dmui
 			a_h = static_cast<float>(a_texture->GetHeight());
 
 		(void)dmui::ui::Image(a_texture->GetHandle(), { a_w, a_h });
+	}
+
+	static double GetTime()
+	{
+		// Get the duration elapsed since the clock's epoch
+		auto duration_since_epoch = std::chrono::steady_clock::now().time_since_epoch();
+		// Convert that duration to a double in seconds
+		std::chrono::duration<double> seconds_duration = duration_since_epoch;
+		// Extract the double value
+		return seconds_duration.count();
+	}
+
+	namespace spinner
+	{
+		static void SpinnerFadeBars(float w, const dmui::ui::Vec4& color = { 1.f, 1.f, 1.f, 1.f },
+			float speed = 2.8f, size_t bars = 3, bool scale = false)
+		{
+			const float radius = (w * 0.5f) * bars;
+			dmui::ui::Vec2 pos = dmui::ui::GetCursorScreenPos(), size{radius * 2, radius * 2}, centre{radius, radius};
+
+			const float nextItemKoeff = 1.5f;
+			const float yOffsetKoeftt = 0.8f;
+			const float heightSpeed = 0.8f;
+			const float start = static_cast<float>(GetTime()) * speed;
+			const float offset = static_cast<float>(std::numbers::pi) / bars;
+
+			for (size_t i = 0; i < bars; i++)
+			{
+				float a = start + (static_cast<float>(std::numbers::pi) - i * offset);
+				dmui::ui::Vec4 c = { color.x, color.y, color.z, std::max(0.1f, std::sinf(a * heightSpeed)) };
+				float h = (scale ? (0.6f + 0.4f * c.w) : 1.f) * size.y * .5f;
+
+				dmui::ui::WindowDrawList().AddRectFilled(
+					{ pos.x + 2.f + i * (w * nextItemKoeff) - w * .5f, pos.y + (centre.y - h * yOffsetKoeftt) },
+					{ pos.x + 2.f + i * (w * nextItemKoeff) + w * .5f, pos.y + (centre.y + h * yOffsetKoeftt) },
+					dmui::ui::ColorConvertFloat4ToU32(c));
+			}
+		}
 	}
 }
 
@@ -379,6 +419,15 @@ void meDMUIClient::RendererExplorerPage() noexcept
 	static uint16_t countMinForBuy = 1;
 	static uint16_t countMaxForBuy = 500;
 	static uint32_t selectPluginIdList = -1;
+
+	if (no_once_load_items.load())
+	{
+		no_once_load_items.store(false);
+		done.store(false);
+		needItemsUpdate.store(true);
+	}
+
+	dmui::ui::Text("%f", dmui::GetTime());
 
 	auto widgetRect = dmui::ui::GetContentRegionAvail();
 
@@ -686,7 +735,11 @@ void meDMUIClient::RendererExplorerPage() noexcept
 			}
 			else
 			{
-				dmui::ui::Text("Please wait...");
+				constexpr auto w = 40.f;
+				auto wndRect = dmui::ui::GetContentRegionAvail();
+				auto posScreen = dmui::ui::GetCursorScreenPos();
+				dmui::ui::SetCursorScreenPos({ posScreen.x + (wndRect.x - w * 2) * .5f, posScreen.y + (wndRect.y - w * 2) * .5f });
+				dmui::spinner::SpinnerFadeBars(w, theme.info, 5.6f, 4, true);
 			}
 		}
 
