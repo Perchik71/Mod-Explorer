@@ -69,7 +69,7 @@ class meModStorage
 	std::string filename{};
 	std::string author{};
 	std::string summary{};
-	RE::BSSpinLock locker{};
+	RE::BSReadWriteLock locker{};
 	const RE::TESFile* file{ nullptr };
 	std::array<meItemList, std::to_underlying(meItemType::kMax)> arrList{};
 
@@ -106,6 +106,7 @@ public:
 
 using meModList = std::unordered_map<std::string, std::shared_ptr<meModStorage>>;
 using meModSortedList = std::vector<std::shared_ptr<meModStorage>>;
+class meDataStorageAutoLock;
 class meDataStorage :
 	public REX::TSingleton<meDataStorage>
 {
@@ -113,11 +114,13 @@ class meDataStorage :
 	meModSortedList sortedMods{};
 	meModSortedList sortedShopMods{};
 	uint32_t dmodNum{ 0 }, lmodNum{ 0 };
-	RE::BSSpinLock locker{};
+	RE::BSReadWriteLock locker{};
 
 	void AddItem(meItemType a_type, const RE::TESForm* a_form) noexcept;
 	void AddRange(meItemType a_type, const RE::BSTArray<RE::TESForm*>& a_arr) noexcept;
 public:
+	friend class meDataStorageAutoLock;
+
 	meDataStorage() = default;
 
 	uint32_t GetModCount() const noexcept;
@@ -136,8 +139,8 @@ public:
 	inline meModSortedList::const_iterator cbegin() noexcept { return sortedMods.cbegin(); }
 	inline meModSortedList::const_iterator cend() noexcept { return sortedMods.cend(); }
 
-	void Lock() const noexcept { const_cast<meDataStorage*>(this)->locker.lock(); }
-	void Unlock() const noexcept { const_cast<meDataStorage*>(this)->locker.unlock(); }
+	void Lock() const noexcept { const_cast<meDataStorage*>(this)->locker.lock_read(); }
+	void Unlock() const noexcept { const_cast<meDataStorage*>(this)->locker.unlock_read(); }
 
 	void InitSDM() noexcept;
 	void KillSDM() noexcept;

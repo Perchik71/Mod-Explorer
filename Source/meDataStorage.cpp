@@ -75,7 +75,7 @@ void meModStorage::AddItem(meItemType a_type, const RE::TESForm* a_form) noexcep
 	if (id == -1)
 		return;
 
-	RE::BSAutoLock guard(locker);
+	RE::BSAutoWriteLock guard(locker);
 
 	// weird.. it skips some form
 	//if (!file->IsFormInMod(a_form->formID))
@@ -211,7 +211,7 @@ meModStorage::meModStorage(const RE::TESFile* a_plugin) noexcept :
 
 void meModStorage::Clear() noexcept
 {
-	RE::BSAutoLock guard(locker);
+	RE::BSAutoWriteLock guard(locker);
 
 	for (auto& list : arrList)
 		list.clear();
@@ -223,7 +223,7 @@ void meModStorage::Clear() noexcept
 
 uint32_t meModStorage::GetItemCount(meItemType a_type) const noexcept
 {
-	RE::BSAutoLock guard(const_cast<meModStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meModStorage*>(this)->locker);
 
 	if (a_type == meItemType::kMax)
 	{
@@ -244,7 +244,7 @@ uint32_t meModStorage::GetItemCount(meItemType a_type) const noexcept
 
 void meModStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted, bool a_clear) const noexcept
 {
-	RE::BSAutoLock guard(const_cast<meModStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meModStorage*>(this)->locker);
 
 	if (a_clear)
 		a_list.clear();
@@ -275,7 +275,7 @@ void meModStorage::Sort() noexcept
 
 std::optional<meItem> meModStorage::GetItem(meItemType a_type, uint32_t a_formId) const noexcept
 {
-	RE::BSAutoLock guard(const_cast<meModStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meModStorage*>(this)->locker);
 
 	if (a_type == meItemType::kMax)
 	{
@@ -378,7 +378,7 @@ uint32_t meDataStorage::GetModForShopCount() const noexcept
 
 const std::shared_ptr<meModStorage> meDataStorage::GetMod(const std::string& a_filename) const noexcept
 {
-	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meDataStorage*>(this)->locker);
 
 	std::string fname = a_filename;
 	auto it = mods.find(_strlwr(fname.data()));
@@ -390,7 +390,7 @@ const std::shared_ptr<meModStorage> meDataStorage::GetModByIndex(uint32_t a_idx)
 	if (a_idx >= GetModCount())
 		return nullptr;
 
-	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meDataStorage*>(this)->locker);
 	return sortedMods[a_idx];
 }
 
@@ -399,13 +399,13 @@ const std::shared_ptr<meModStorage> meDataStorage::GetModForShopByIndex(uint32_t
 	if (a_idx >= GetModForShopCount())
 		return nullptr;
 
-	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meDataStorage*>(this)->locker);
 	return sortedShopMods[a_idx];
 }
 
 uint32_t meDataStorage::GetItemCount(meItemType a_type) const noexcept
 {
-	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meDataStorage*>(this)->locker);
 
 	uint32_t num = 0;
 	for (auto& it : mods)
@@ -415,7 +415,7 @@ uint32_t meDataStorage::GetItemCount(meItemType a_type) const noexcept
 
 void meDataStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_sorted, bool a_clear) const noexcept
 {
-	RE::BSAutoLock guard(const_cast<meDataStorage*>(this)->locker);
+	RE::BSAutoReadLock guard(const_cast<meDataStorage*>(this)->locker);
 
 	if (a_clear)
 		a_list.clear();
@@ -429,7 +429,7 @@ void meDataStorage::GetAllItems(meItemType a_type, meItemList& a_list, bool a_so
 
 void meDataStorage::InitSDM() noexcept
 {
-	RE::BSAutoLock guard(locker);
+	RE::BSAutoWriteLock guard(locker);
 
 	mods.clear();
 	lmodNum = dmodNum = 0;
@@ -489,7 +489,7 @@ void meDataStorage::InitSDM() noexcept
 
 void meDataStorage::KillSDM() noexcept
 {
-	RE::BSAutoLock guard(locker);
+	RE::BSAutoWriteLock guard(locker);
 
 	mods.clear();
 	sortedMods.clear();

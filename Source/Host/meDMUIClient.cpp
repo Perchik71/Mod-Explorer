@@ -414,7 +414,7 @@ void meDMUIClient::RendererExplorerPage() noexcept
 				// Freeze the first row (the header) so it stays visible while scrolling
 				dmui::ui::TableSetupScrollFreeze(0, 1);
 
-				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFF");
+				auto sizeOrderColumn = dmui::ui::CalcTextSize("0xFFFFFZ");
 
 				// Setup columns the header row
 				dmui::ui::TableSetupColumn(lsGeneralPageNumPluginsOrder,
@@ -470,7 +470,7 @@ void meDMUIClient::RendererExplorerPage() noexcept
 								}
 
 								if (dmui::ui::TableNextColumn())
-									dmui::ui::Text("- - - All - - -");
+									dmui::ui::Text("- - - %s - - -", lsAll.GetValue());
 							}
 							else
 							{
@@ -568,7 +568,6 @@ void meDMUIClient::RendererExplorerPage() noexcept
 				dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
 
 				auto avail = dmui::ui::GetContentRegionAvail();
-
 				if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.explorer.body.items", 4, flags,
 					{ -1.f, avail.y - (clientRect.y - avail.y) }))
 				{
@@ -578,23 +577,37 @@ void meDMUIClient::RendererExplorerPage() noexcept
 					// Freeze the first row (the header) so it stays visible while scrolling
 					dmui::ui::TableSetupScrollFreeze(0, 1);
 
-					auto sizeOrderColumn = dmui::ui::CalcTextSize("0xXXYYZZFFZ");
+					auto sizeOrderColumn = dmui::ui::CalcTextSize("0xXXYYZZFF");
 					sizeOrderColumn.x += 8.f;
 					sizeOrderColumn.y += 2.f;
+					auto width_2_column = sizeOrderColumn.x * 1.2f;
 
 					// Setup columns the header row
 					dmui::ui::TableSetupColumn("",
 						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
 						30.f);
-					dmui::ui::TableSetupColumn("FormID",
+					dmui::ui::TableSetupColumn("",
 						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
 						sizeOrderColumn.x);
 					dmui::ui::TableSetupColumn(lsType,
 						dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-						sizeOrderColumn.x * 1.2f);
+						width_2_column);
 					dmui::ui::TableSetupColumn(lsFullname,
 						dmui::ui::TableColumnFlags::kWidthStretch);
-					dmui::ui::TableHeadersRow();
+
+					dmui::ui::TableNextRow(dmui::ui::TableRowFlags::kHeaders, sizeOrderColumn.y * 1.5f - 3.f);
+					(void)dmui::ui::TableSetColumnIndex(1);
+					auto s_header = dmui::ui::GetCursorScreenPos();
+					dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
+					dmui::ui::Text("FormID", sizeOrderColumn.y);
+					(void)dmui::ui::TableSetColumnIndex(2);
+					s_header = dmui::ui::GetCursorScreenPos();
+					dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
+					dmui::ui::TextAligned(.5f, width_2_column, lsType.GetValue());
+					(void)dmui::ui::TableSetColumnIndex(3);
+					s_header = dmui::ui::GetCursorScreenPos();
+					dmui::ui::SetCursorScreenPos({ s_header.x, s_header.y + 7.f });
+					dmui::ui::Text(lsFullname);
 
 					dmui::ui::PopStyleColor(2);
 					const auto colorSelectedRow = dmui::ui::GetStyleColor(dmui::ui::Color::kHeader);
@@ -623,35 +636,34 @@ void meDMUIClient::RendererExplorerPage() noexcept
 							{
 								dmui::ui::PushStyleColor(dmui::ui::Color::kText, theme.info);
 								
-								auto w = sizeOrderColumn.x * 1.2f;
 								switch (item.type)
 								{
 								case meItemType::kArmorItem:
-									dmui::ui::TextAligned(.5f, w, lsArmor.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsArmor.GetValue());
 									break;
 								case meItemType::kBookItem:
-									dmui::ui::TextAligned(.5f, w, lsBook.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsBook.GetValue());
 									break;
 								case meItemType::kMiscItem:
-									dmui::ui::TextAligned(.5f, w, lsMisc.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsMisc.GetValue());
 									break;
 								case meItemType::kWeaponItem:
-									dmui::ui::TextAligned(.5f, w, lsWeapon.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsWeapon.GetValue());
 									break;
 								case meItemType::kAmmoItem:
-									dmui::ui::TextAligned(.5f, w, lsAmmo.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsAmmo.GetValue());
 									break;
 								case meItemType::kKeyItem:
-									dmui::ui::TextAligned(.5f, w, lsKey.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsKey.GetValue());
 									break;
 								case meItemType::kAlchemyItem:
-									dmui::ui::TextAligned(.5f, w, lsAlchemy.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsAlchemy.GetValue());
 									break;
 								case meItemType::kNoteItem:
-									dmui::ui::TextAligned(.5f, w, lsNote.GetValue());
+									dmui::ui::TextAligned(.5f, width_2_column, lsNote.GetValue());
 									break;
 								default:
-									dmui::ui::TextAligned(.5f, w, "-");
+									dmui::ui::TextAligned(.5f, width_2_column, "-");
 									break;
 								}
 
@@ -927,6 +939,8 @@ bool meDMUIClient::Connect() noexcept
 					}
 					catch (...)
 					{}
+
+					std::this_thread::sleep_for(2000ms);
 
 					needItemsUpdate.store(false);
 					done.store(true);
