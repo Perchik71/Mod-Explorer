@@ -19,7 +19,7 @@ class meDMUIClient :
 	static constexpr const auto kPageExplorerId		= "dearmodding.modexplorer.page.explorer";
 	static constexpr const auto kPageBasketId		= "dearmodding.modexplorer.page.basket";
 
-	std::unique_ptr<dmui::Client> client{};
+	std::shared_ptr<dmui::Client> client{};
 
 	static void RendererGeneralPage();
 	static void RendererExplorerPage() noexcept;

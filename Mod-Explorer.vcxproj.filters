@@ -10,6 +10,12 @@
     <ClCompile Include="Source\Host\DDSTextureLoader11.cpp" />
     <ClCompile Include="Source\Host\WICTextureLoader11.cpp" />
     <ClCompile Include="Source\Host\TextureLoader.cpp" />
+    <ClCompile Include="Source\Host\meDMUIPageGeneralInfo.cpp" />
+    <ClCompile Include="Source\Host\meDMUIPageBased.cpp" />
+    <ClCompile Include="Source\Host\meDMUISpinner.cpp" />
+    <ClCompile Include="Source\Host\meDMUIUtils.cpp" />
+    <ClCompile Include="Source\Host\meDMUIPageManager.cpp" />
+    <ClCompile Include="Source\Host\meDMUIPageExplorer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\mePlugin.h" />
@@ -22,6 +28,13 @@
     <ClInclude Include="Source\Host\WICTextureLoader11.h" />
     <ClInclude Include="Source\Host\TextureLoader.h" />
     <ClInclude Include="Resources\resource.h" />
+    <ClInclude Include="Source\Host\meDMUIPageGeneralInfo.h" />
+    <ClInclude Include="Source\Host\meDMUIPageBased.h" />
+    <ClInclude Include="Source\Host\meDMUISpinner.h" />
+    <ClInclude Include="Source\Host\meDMUIUtils.h" />
+    <ClInclude Include="Source\Host\meHostLocalizeString.h" />
+    <ClInclude Include="Source\Host\meDMUIPageManager.h" />
+    <ClInclude Include="Source\Host\meDMUIPageExplorer.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources\Mod-Explorer.rc" />
