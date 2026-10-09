@@ -92,6 +92,8 @@ namespace PageHelper
 										{
 											selectPluginIdList = row;
 											a_sender->SetSelectedPluginId(row - 1);
+											a_sender->SetSelectedShopItemId(-1);
+											a_sender->ResetSearchItem();
 											a_sender->RequestAsyncUpdateItem();
 										}
 
@@ -123,6 +125,8 @@ namespace PageHelper
 										{
 											selectPluginIdList = row;
 											a_sender->SetSelectedPluginId(row - 1);
+											a_sender->SetSelectedShopItemId(-1);
+											a_sender->ResetSearchItem();
 											a_sender->RequestAsyncUpdateItem();
 										}
 
@@ -188,7 +192,9 @@ namespace PageHelper
 										a_sender->SetSelectedPluginId(-1);
 									else
 										a_sender->SetSelectedPluginId(static_cast<int32_t>(std::distance(items.cbegin(), it)));
-
+						
+									a_sender->SetSelectedShopItemId(-1);
+									a_sender->ResetSearchItem();
 									a_sender->RequestAsyncUpdateItem();
 								}
 
@@ -227,6 +233,7 @@ void meDMUIPageExplorer::DoDrawPage()
 	static uint16_t countMinForBuy = 1;
 	static uint16_t countMaxForBuy = 500;
 	static int32_t selectPluginIdList = -1;
+	static int32_t selectItemIdList = selectedShopItemId.load();
 
 	static dmui::ui::Vec2 sizeSearchText{};
 	static dmui::ui::Vec2 sizeCountText{};
@@ -277,14 +284,14 @@ void meDMUIPageExplorer::DoDrawPage()
 				if (!textExplorerSearchPluginDone[0])
 				{
 					selectPluginIdList = 0;
-					textExplorerSearchItem[0] = '\0';
-					textExplorerSearchItemDone[0] = '\0';
+					SetSelectedShopItemId(-1);
+					ResetSearchItem();
 					RequestAsyncUpdateItem();
 				}
 				else
 				{
-					textExplorerSearchItem[0] = '\0';
-					textExplorerSearchItemDone[0] = '\0';
+					SetSelectedShopItemId(-1);
+					ResetSearchItem();
 					RequestAsyncUpdateItem(TRequestAsync::kSearchPlugins);
 				}
 			}
@@ -318,7 +325,10 @@ void meDMUIPageExplorer::DoDrawPage()
 					dmui::ui::PushStyleColor(dmui::ui::Color::kButton, prevColor);
 				if (dmui::ui::Button(a_id.c_str()))
 				{
+					selectedShopItemId.store(-1);
 					selectedShopTypeId.store(a_typeId);
+					SetSelectedShopItemId(-1);
+					ResetSearchItem();
 					RequestAsyncUpdateItem();
 				}
 				if (currentBtnType == a_typeId)
@@ -343,10 +353,17 @@ void meDMUIPageExplorer::DoDrawPage()
 			dmui::ui::SetCursorPosY(safeY);
 			dmui::ui::SetNextItemWidth(clientRect.x - sizeSearchText.x);
 			if (dmui::ui::InputText("##dearmodding.modexplorer.page.explorer.body.searchinput.items",
-				textExplorerSearchItem.data(), textExplorerSearchItem.size()))
+				textExplorerSearchItem.data(), textExplorerSearchItem.size(), dmui::ui::InputTextFlags::kEnterReturnsTrue))
 			{
+				itemShopList.clear();
 
-				//printf("Text changed to: %s\n", text_buffer);
+				memcpy_s(textExplorerSearchItemDone.data(), textExplorerSearchItemDone.size(),
+					textExplorerSearchItem.data(), textExplorerSearchItem.size());
+
+				if (!textExplorerSearchItemDone[0])
+					RequestAsyncUpdateItem();
+				else
+					RequestAsyncUpdateItem(TRequestAsync::kSearchItems);
 			}
 
 			if (!IsProcessingSearchPlugins())
@@ -381,7 +398,7 @@ void meDMUIPageExplorer::DoDrawPage()
 						// Setup columns the header row
 						dmui::ui::TableSetupColumn("",
 							dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
-							30.f);
+							sizeOrderColumn.y);
 						dmui::ui::TableSetupColumn("",
 							dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
 							sizeOrderColumn.x);
@@ -418,9 +435,28 @@ void meDMUIPageExplorer::DoDrawPage()
 							{
 								auto& item = itemShopList[row];
 
+								auto is_selected = (selectItemIdList == row);
+								if (is_selected)
+									dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, colorSelectedRow);
+
 								dmui::ui::TableNextRow();
-								if (dmui::ui::TableNextColumn() && item.flag.all(meItemFlag::kQuestItem))
-									DMUI_Image(GetClient(), textureStar, sizeOrderColumn.y, sizeOrderColumn.y);
+								if (dmui::ui::TableNextColumn())
+								{
+									char label[96];
+									sprintf_s(label, "##dearmodding.modexplorer.page.explorer.body.plugins.row.%d", row);
+									if (dmui::ui::Selectable(label, is_selected, dmui::ui::SelectableFlags::kSpanAllColumns))
+										if (!IsProcessingUpdateItems() && !IsProcessingSearchItems())
+										{
+											selectItemIdList = row;
+											SetSelectedShopItemId(row);
+										}
+
+									if (item.flag.all(meItemFlag::kQuestItem))
+									{
+										dmui::ui::SameLine();
+										DMUI_Image(GetClient(), textureStar, sizeOrderColumn.y - 2.f, sizeOrderColumn.y - 2.f);
+									}
+								}
 
 								if (dmui::ui::TableNextColumn())
 									dmui::ui::Text("0x%08X", item.formId);
@@ -465,6 +501,9 @@ void meDMUIPageExplorer::DoDrawPage()
 
 								if (dmui::ui::TableNextColumn())
 									dmui::ui::Text("%s", item.name.c_str());
+
+								if (is_selected)
+									dmui::ui::PopStyleColor();
 							}
 						}
 
@@ -475,17 +514,17 @@ void meDMUIPageExplorer::DoDrawPage()
 
 					dmui::ui::Dummy({ 0.f, 0.f });
 					auto posXCount = dmui::ui::GetCursorPosX();
-					dmui::ui::BeginDisabled();
+					dmui::ui::BeginDisabled();	/* TODO */
 					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.show",
 						lsExplorerPageShowModel.GetValue()).c_str());
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
-					dmui::ui::BeginDisabled();
+					dmui::ui::BeginDisabled(!itemShopList.size());
 					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buyall",
 						lsExplorerPageBuyAll.GetValue()).c_str());
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
-					dmui::ui::BeginDisabled();
+					dmui::ui::BeginDisabled(GetSelectedShopItemId() == -1);
 					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buy",
 						lsExplorerPageBuy.GetValue()).c_str());
 					dmui::ui::SameLine(0, 30.f);
@@ -647,6 +686,108 @@ void meDMUIPageExplorer::DoRequestSearchItems()
 	std::thread([](meDMUIPageExplorer* a_sender) {
 		using namespace std::literals;
 
+		std::array<char, 256> buffer{};
+		REX::FTimer timer;
+		auto dataStorage = meDataStorage::GetSingleton();
+
+		timer.Start();
+
+		try
+		{
+			auto typeId = a_sender->GetSelectedShopTypeId();
+			auto pluginId = a_sender->GetSelectedPluginId();
+			meItemList itemList{};	
+			auto& itemShopList = a_sender->GetItemShopList();
+			itemShopList.clear();
+			
+			if (pluginId == -1)
+			{
+				switch (typeId)
+				{
+				case 0:
+					dataStorage->GetAllItems(meItemType::kArmorItem, itemList, false);
+					break;
+				case 1:
+					dataStorage->GetAllItems(meItemType::kBookItem, itemList, false);
+					break;
+				case 2:
+					dataStorage->GetAllItems(meItemType::kMiscItem, itemList, false);
+					break;
+				case 3:
+					dataStorage->GetAllItems(meItemType::kWeaponItem, itemList, false);
+					break;
+				case 4:
+					dataStorage->GetAllItems(meItemType::kAmmoItem, itemList, false);
+					break;
+				case 5:
+					dataStorage->GetAllItems(meItemType::kKeyItem, itemList, false);
+					break;
+				case 6:
+					dataStorage->GetAllItems(meItemType::kAlchemyItem, itemList, false);
+					break;
+				case 7:
+					dataStorage->GetAllItems(meItemType::kNoteItem, itemList, false);
+					break;
+				default:
+					dataStorage->GetAllItems(meItemType::kMax, itemList, false);
+					break;
+				}
+			}
+			else
+			{
+				auto plugin = dataStorage->GetModForShopByIndex(pluginId);
+				if (plugin)
+				{
+					switch (typeId)
+					{
+					case 0:
+						plugin->GetAllItems(meItemType::kArmorItem, itemList, false);
+						break;
+					case 1:
+						plugin->GetAllItems(meItemType::kBookItem, itemList, false);
+						break;
+					case 2:
+						plugin->GetAllItems(meItemType::kMiscItem, itemList, false);
+						break;
+					case 3:
+						plugin->GetAllItems(meItemType::kWeaponItem, itemList, false);
+						break;
+					case 4:
+						plugin->GetAllItems(meItemType::kAmmoItem, itemList, false);
+						break;
+					case 5:
+						plugin->GetAllItems(meItemType::kKeyItem, itemList, false);
+						break;
+					case 6:
+						plugin->GetAllItems(meItemType::kAlchemyItem, itemList, false);
+						break;
+					case 7:
+						plugin->GetAllItems(meItemType::kNoteItem, itemList, false);
+						break;
+					default:
+						plugin->GetAllItems(meItemType::kMax, itemList, false);
+						break;
+					}
+				}
+			}
+
+			for (auto& item : itemList)
+			{
+				sprintf_s(buffer.data(), buffer.size(), "%08X %s", item.formId, item.name.c_str());
+				if (StrStrIA(buffer.data(), a_sender->GetTextSearchItem()))
+					itemShopList.emplace_back(item);
+			}
+		}
+		catch (...)
+		{}
+
+		timer.Stop();
+
+		// protection against epileptics
+		auto duration = timer.GetDuration<std::chrono::milliseconds>();
+		if (duration < 750)
+			std::this_thread::sleep_for((750 - duration) * 1ms);
+
 		a_sender->ResetState();
 		}, this).detach();
 }
@@ -669,6 +810,16 @@ int32_t meDMUIPageExplorer::GetSelectedPluginId() const noexcept
 void meDMUIPageExplorer::SetSelectedPluginId(int32_t a_idx) noexcept
 {
 	selectedPluginId.store(a_idx);
+}
+
+int32_t meDMUIPageExplorer::GetSelectedShopItemId() const noexcept
+{
+	return selectedShopItemId.load();
+}
+
+void meDMUIPageExplorer::SetSelectedShopItemId(int32_t a_idx) noexcept
+{
+	selectedShopItemId.store(a_idx);
 }
 
 int8_t meDMUIPageExplorer::GetSelectedShopTypeId() const noexcept
@@ -740,4 +891,10 @@ bool meDMUIPageExplorer::IsProcessingSearchItems() const noexcept
 void meDMUIPageExplorer::ResetState()
 {
 	currentEvent.store(TRequestAsync::kNone);
+}
+
+void meDMUIPageExplorer::ResetSearchItem()
+{
+	textExplorerSearchItem[0] = '\0';
+	textExplorerSearchItemDone[0] = '\0';
 }

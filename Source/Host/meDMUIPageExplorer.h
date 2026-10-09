@@ -46,6 +46,8 @@ public:
 
 	int32_t GetSelectedPluginId() const noexcept;
 	void SetSelectedPluginId(int32_t a_idx) noexcept;
+	int32_t GetSelectedShopItemId() const noexcept;
+	void SetSelectedShopItemId(int32_t a_idx) noexcept;
 	int8_t GetSelectedShopTypeId() const noexcept;
 	void SetSelectedShopTypeId(int8_t a_idx) noexcept;
 	meItemList& GetItemShopList() noexcept;
@@ -58,4 +60,5 @@ public:
 	[[nodiscard]] bool IsProcessingSearchPlugins() const noexcept;
 	[[nodiscard]] bool IsProcessingSearchItems() const noexcept;
 	void ResetState();
+	void ResetSearchItem();
 };
