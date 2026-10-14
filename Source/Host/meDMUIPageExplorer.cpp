@@ -456,6 +456,7 @@ void meDMUIPageExplorer::DoDrawPage()
 									{
 										dmui::ui::SameLine();
 										DMUI_Image(GetClient(), textureStar, sizeOrderColumn.y - 2.f, sizeOrderColumn.y - 2.f);
+										DMUI_SetItemTooltip(GetClient(), lsStarIcon.GetValue(), true);
 									}
 								}
 

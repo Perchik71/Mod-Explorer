@@ -29,20 +29,35 @@ void meBasket::Append(const meItem& a_item, uint32_t a_count) noexcept
 	RE::BSAutoWriteLock guard{ locker };
 
 	a_count = std::min(a_count, MAX_NUM);
-	if (list.try_emplace(a_item, a_count).second)
+	auto it = list.find(a_item);
+	if (it == list.end())
 	{
-		auto it = list.find(a_item);
-		if (it == list.end()) return;
-		auto oldNum = it->second;
-		it->second = std::min(it->second + a_count, MAX_NUM);
-		a_count = it->second - oldNum;
-	}
-
-	if (a_count)
-	{
+		list.emplace(a_item, a_count);
 		price.fetch_add(a_item.price * a_count);
 		weight.fetch_add(a_item.weight * a_count);
 	}
+	else
+	{
+
+	}
+
+//	if (list.try_emplace(a_item, a_count).second)
+//	{
+//#if 0
+//		auto it = list.find(a_item);
+//		if (it == list.end() || (a_count >= MAX_NUM)) return;
+//		auto oldNum = it->second;
+//		it->second = std::min(it->second + a_count, MAX_NUM);
+//		a_count = it->second - oldNum;
+//#else
+//		return;
+//#endif
+//	}
+//
+//	if (a_count)
+//	{
+//		
+//	}
 }
 
 void meBasket::Append(const meItemList& a_list, uint32_t a_count) noexcept
@@ -58,23 +73,41 @@ void meBasket::Append(const meItemList& a_list, uint32_t a_count) noexcept
 
 	RE::BSAutoWriteLock guard{ locker };
 
+	auto num = std::min(a_count, MAX_NUM);
 	for (auto& item : a_list)
 	{
-		auto num = std::min(a_count, MAX_NUM);
-		if (list.try_emplace(item, num).second)
+		auto it = list.find(item);
+		if (it == list.end())
 		{
-			auto it = list.find(item);
-			if (it == list.end()) continue;
-			auto oldNum = it->second;
-			it->second = std::min(it->second + num, MAX_NUM);
-			num = it->second - oldNum;
+			list.emplace(item, a_count);
+			price.fetch_add(item.price * a_count);
+			weight.fetch_add(item.weight * a_count);
 		}
-		
-		if (num)
+		else
 		{
-			price.fetch_add(item.price * num);
-			weight.fetch_add(item.weight * num);
+
 		}
+
+//
+//		
+//		if (list.try_emplace(item, num).second)
+//		{
+//#if 0
+//			auto it = list.find(item);
+//			if (it == list.end()) continue;
+//			auto oldNum = it->second;
+//			it->second = std::min(it->second + num, MAX_NUM);
+//			num = it->second - oldNum;
+//#else
+//			continue;
+//#endif
+//		}
+//		
+//		if (num)
+//		{
+//			price.fetch_add(item.price * num);
+//			weight.fetch_add(item.weight * num);
+//		}
 	}
 }
 

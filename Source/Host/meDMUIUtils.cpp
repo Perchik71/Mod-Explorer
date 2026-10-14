@@ -1,4 +1,5 @@
 #include "meDMUIUtils.h"
+#include "meHostLocalizeString.h"
 
 DmVec4 DMUI_ColorConvertU32ToFloat4(DmU32 in) noexcept
 {
@@ -38,9 +39,27 @@ void DMUI_Image(dmui::Client* a_client, const std::shared_ptr<dmui::Texture> a_t
 
 void DMUI_QuotteRect(DmVec2 a_min, DmVec2 a_max) noexcept
 {
-	dmui::ui::WindowDrawList().AddRect(a_min, a_max, DMUI_COL32(255, 255, 255, 96), 4.f);
+	dmui::ui::WindowDrawList().AddRect(a_min, a_max, DMUI_COL32(255, 255, 255, 114), 4.f);
 	dmui::ui::WindowDrawList().AddRectFilled(a_min, a_max, DMUI_COL32(255, 255, 255, 24), 4.f);
 }
+
+void DMUI_SetItemTooltip(dmui::Client* a_client, const std::string_view& a_desc, bool a_warning) noexcept
+{
+	if (dmui::ui::BeginItemTooltip())
+	{
+		auto themeOptional = a_client->GetThemeColors();
+		if (a_warning)
+			dmui::ui::TextColored(themeOptional.has_value() ? themeOptional.value().error : DmVec4{ 1.f, .3f, .3f, 1.f },
+				std::format("{}:", lsWarning.GetValue()).c_str());
+
+		dmui::ui::PushTextWrapPos(dmui::ui::GetFontSize() * 35.0f);
+		dmui::ui::TextUnformatted(a_desc);
+		dmui::ui::PopTextWrapPos();
+		dmui::ui::EndTooltip();
+	}
+}
+
+
 
 double GetTime() noexcept
 {

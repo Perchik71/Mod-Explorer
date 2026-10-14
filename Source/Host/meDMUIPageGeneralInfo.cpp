@@ -176,67 +176,35 @@ void meDMUIPageGeneralInfo::DoDrawPage()
 								{
 								case meItemType::kArmorItem:
 									DMUI_Image(GetClient(), textureArmor, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsArmor);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsArmor.GetValue());
 									break;
 								case meItemType::kBookItem:
 									DMUI_Image(GetClient(), textureBook, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsBook);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsBook.GetValue());
 									break;
 								case meItemType::kMiscItem:
 									DMUI_Image(GetClient(), textureMisc, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsMisc);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsMisc.GetValue());
 									break;
 								case meItemType::kWeaponItem:
 									DMUI_Image(GetClient(), textureWeapon, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsWeapon);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsWeapon.GetValue());
 									break;
 								case meItemType::kAmmoItem:
 									DMUI_Image(GetClient(), textureAmmo, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsAmmo);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsAmmo.GetValue());
 									break;
 								case meItemType::kKeyItem:
 									DMUI_Image(GetClient(), textureKey, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsKey);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsKey.GetValue());
 									break;
 								case meItemType::kAlchemyItem:
 									DMUI_Image(GetClient(), textureAlchemy, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsAlchemy);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsAlchemy.GetValue());
 									break;
 								case meItemType::kNoteItem:
 									DMUI_Image(GetClient(), textureNote, row_size, row_size);
-									if (dmui::ui::BeginItemTooltip())
-									{
-										dmui::ui::Text(lsNote);
-										dmui::ui::EndTooltip();
-									}
+									DMUI_SetItemTooltip(GetClient(), lsNote.GetValue());
 									break;
 								default:
 									break;

@@ -24,6 +24,8 @@ static dmui::localize::LocalizeString lsNote("$Note", "Note");
 static dmui::localize::LocalizeString lsType("$Type", "Type");
 static dmui::localize::LocalizeString lsFullname("$Fullname", "Full name");
 static dmui::localize::LocalizeString lsSearch("$Search", "Search");
+static dmui::localize::LocalizeString lsWarning("$Warning", "WARNING");
+static dmui::localize::LocalizeString lsStarIcon("$StarIcon", "This item is a quest item and will break the quest, at your risk!");
 
 // General page
 static dmui::localize::LocalizeString lsGeneralPageNumPlugins("$GeneralPageNumPlugins", "Installed plugins");
@@ -45,5 +47,7 @@ static dmui::localize::LocalizeString lsExplorerPageShowModel("$ExplorerPageShow
 static dmui::localize::LocalizeString lsExplorerPageCount("$ExplorerPageCount", "Count");
 
 // Basket page
-static dmui::localize::LocalizeString lsBasketCount("$ExplorerPageBuyAll", "Take All");
+static dmui::localize::LocalizeString lsBasketPagePlayer("$BasketPagePlayer", "Player");
 static dmui::localize::LocalizeString lsBasketPageNoGoodState("$BasketPageNoGoodState", "You have to log in to the game before you can purchase anything here!");
+static dmui::localize::LocalizeString lsBasketPageCaps("$BasketPageCaps", "Caps");
+static dmui::localize::LocalizeString lsBasketPageWeight("$BasketPageWeight", "Weight");

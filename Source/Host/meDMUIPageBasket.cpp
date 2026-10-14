@@ -13,8 +13,8 @@ void meDMUIPageBasket::DoDrawPage()
 	auto availWidthMainCol = avail.x * .67f;
 	auto availHeightTable = avail.y - (metrics.framePadding.y * 3) - sizeOrderColumn.y;
 
-	if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body", 2,
-		dmui::ui::TableFlags::kNone, { -1.f, availHeightTable }))
+	if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body", 2/*,
+		dmui::ui::TableFlags::kNone, { -1.f, availHeightTable-1.f }*/))
 	{
 		dmui::ui::TableSetupColumn("",
 			dmui::ui::TableColumnFlags::kWidthFixed | dmui::ui::TableColumnFlags::kNoResize,
@@ -34,8 +34,8 @@ void meDMUIPageBasket::DoDrawPage()
 		dmui::ui::PushStyleVar(dmui::ui::StyleVar::kItemSpacing, dmui::ui::Vec2(0.0f, 1.0f));
 		dmui::ui::PushStyleVar(dmui::ui::StyleVar::kCellPadding, dmui::ui::Vec2(8.0f, 1.0f));
 
-		if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body.items", 5, flags,
-			{ -1.f, availHeightTable }))
+		if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body.items", 5, flags/*,
+			{ -1.f, availHeightTable }*/))
 		{
 			dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderHovered, { .0f, .0f, .0f, .0f });
 			dmui::ui::PushStyleColor(dmui::ui::Color::kHeaderActive, { .0f, .0f, .0f, .0f });
@@ -116,6 +116,7 @@ void meDMUIPageBasket::DoDrawPage()
 						{
 							dmui::ui::SameLine();
 							DMUI_Image(GetClient(), textureStar, sizeOrderColumn.y - 2.f, sizeOrderColumn.y - 2.f);
+							DMUI_SetItemTooltip(GetClient(), lsStarIcon.GetValue(), true);
 						}
 					}
 
@@ -178,59 +179,97 @@ void meDMUIPageBasket::DoDrawPage()
 
 		if (avail.x > 50.f)
 		{
+			dmui::ui::PanelScope panel{ "Basket" };
+
 			auto basket = meBasket::GetSingleton();
 			auto posScreen = dmui::ui::GetCursorScreenPos();
-			//posScreen.x += metrics.cellPadding.x;
-			//posScreen.y += metrics.cellPadding.y;
 			avail = dmui::ui::GetContentRegionAvail();
-			//avail.x -= metrics.cellPadding.x;
 			auto scaleImg = avail.x / 249.f;
 			auto sizeImg = 128.f * scaleImg;
-			auto quotteRectHeight = sizeImg + metrics.framePadding.y * 4 + 
-				sizeOrderColumn.y * 4;
+			auto quotteRectHeight = sizeImg + metrics.framePadding.y * 5 + 
+				sizeOrderColumn.y * 6;
 
-			DMUI_QuotteRect(posScreen,
-				{ posScreen.x + avail.x, posScreen.y + quotteRectHeight });
+			//DMUI_QuotteRect(posScreen,
+			//	{ posScreen.x + avail.x, posScreen.y + quotteRectHeight });
 			auto posX = dmui::ui::GetCursorPosX();
 			dmui::ui::SetCursorPosX(posX + metrics.cellPadding.x + (avail.x - sizeImg) * .5f);
 			DMUI_Image(GetClient(), textureBasket, sizeImg, sizeImg);
 
-			dmui::ui::SetCursorPosX(posX + metrics.cellPadding.x);
+			(void)GetClient()->DrawSectionHeader(lsBasketPage.GetValue().c_str(), DearModdingUI::FindPhosphorSlugGlyphOrZero("basket"));
+
+			//dmui::ui::SetCursorPosX(posX + metrics.cellPadding.x);
 			if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body.basketinfo", 2))
 			{
 				dmui::ui::TableNextRow();
 				(void)dmui::ui::TableNextColumn();
-				dmui::ui::TextColored(theme.info, std::format("{}:", "caps").c_str());
+				dmui::ui::TextColored(theme.info, std::format("{}:", lsBasketPageCaps.GetValue()).c_str());
 				(void)dmui::ui::TableNextColumn();
 				dmui::ui::TextUnformatted(std::format("{}", basket->GetPrice()).c_str());
 				dmui::ui::TableNextRow();
 				(void)dmui::ui::TableNextColumn();
-				dmui::ui::TextColored(theme.info, std::format("{}:", "weight").c_str());
+				dmui::ui::TextColored(theme.info, std::format("{}:", lsBasketPageWeight.GetValue()).c_str());
 				(void)dmui::ui::TableNextColumn();
 				dmui::ui::TextUnformatted(std::format("{:.3f}", basket->GetWeight()).c_str());
 
 				dmui::ui::EndTable();
 			}
 
-			dmui::ui::Separator();
-
-			dmui::ui::SetCursorPosX(posX + metrics.cellPadding.x);
-			if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body.playerinfo", 2))
+			if (!GetClient()->DrawSectionHeader(lsBasketPagePlayer.GetValue().c_str(), DearModdingUI::FindPhosphorSlugGlyphOrZero("user")))
 			{
-				dmui::ui::TableNextRow();
-				(void)dmui::ui::TableNextColumn();
-				dmui::ui::TextColored(theme.info, std::format("{}:", "caps").c_str());
-				(void)dmui::ui::TableNextColumn();
-				dmui::ui::TextUnformatted(std::format("{}", basket->GetPlayerCaps()).c_str());
-				dmui::ui::TableNextRow();
-				(void)dmui::ui::TableNextColumn();
-				dmui::ui::TextColored(theme.info, std::format("{}:", "weight").c_str());
-				(void)dmui::ui::TableNextColumn();
-				auto w = basket->GetPlayerWeight();
-				dmui::ui::TextUnformatted(std::format("{:.3f}/{:.3f}", w[0], w[1]).c_str());
+				dmui::ui::Separator();
+				//dmui::ui::SetCursorPosX(posX + metrics.cellPadding.x);
+				if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body.playerinfo", 2))
+				{
+					dmui::ui::TableNextRow();
+					(void)dmui::ui::TableNextColumn();
+					dmui::ui::TextColored(theme.info, std::format("{}|{}:", lsBasketPageCaps.GetValue(), lsBasketPagePlayer.GetValue()).c_str());
+					(void)dmui::ui::TableNextColumn();
+					dmui::ui::TextUnformatted(std::format("{}", basket->GetPlayerCaps()).c_str());
+					dmui::ui::TableNextRow();
+					(void)dmui::ui::TableNextColumn();
+					dmui::ui::TextColored(theme.info, std::format("{}|{}:", lsBasketPageWeight.GetValue(), lsBasketPagePlayer.GetValue()).c_str());
+					(void)dmui::ui::TableNextColumn();
+					auto w = basket->GetPlayerWeight();
+					dmui::ui::TextUnformatted(std::format("{:.3f}/{:.3f}", w[0], w[1]).c_str());
 
-				dmui::ui::EndTable();
-			}			
+					dmui::ui::EndTable();
+				}
+			}
+			else
+			{
+			//	dmui::ui::SetCursorPosX(posX + metrics.cellPadding.x);
+				if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body.playerinfo", 2))
+				{
+					dmui::ui::TableNextRow();
+					(void)dmui::ui::TableNextColumn();
+					dmui::ui::TextColored(theme.info, std::format("{}:", lsBasketPageCaps.GetValue()).c_str());
+					(void)dmui::ui::TableNextColumn();
+					dmui::ui::TextUnformatted(std::format("{}", basket->GetPlayerCaps()).c_str());
+					dmui::ui::TableNextRow();
+					(void)dmui::ui::TableNextColumn();
+					dmui::ui::TextColored(theme.info, std::format("{}:", lsBasketPageWeight.GetValue()).c_str());
+					(void)dmui::ui::TableNextColumn();
+					auto w = basket->GetPlayerWeight();
+					dmui::ui::TextUnformatted(std::format("{:.3f}/{:.3f}", w[0], w[1]).c_str());
+
+					dmui::ui::EndTable();
+				}
+			}
+
+			dmui::ui::Spacing();
+			dmui::ui::Separator();
+			dmui::ui::Spacing();
+
+			if (basket->IsGoodState())
+			{
+
+			}
+			else
+			{
+				dmui::ui::PushStyleColor(dmui::ui::Color::kText, theme.error);
+				dmui::ui::TextWrapped(lsBasketPageNoGoodState);
+				dmui::ui::PopStyleColor();
+			}
 		}
 
 		/*	
@@ -262,13 +301,6 @@ void meDMUIPageBasket::DoDrawPage()
 		dmui::ui::PopStyleVar(2);
 		dmui::ui::EndTable();
 	}
-
-	if (basket->IsGoodState())
-	{
-
-	}
-	else
-		dmui::ui::TextColored(theme.error, lsBasketPageNoGoodState);
 }
 
 void meDMUIPageBasket::DoRequestUpdate()
