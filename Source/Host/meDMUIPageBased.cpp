@@ -26,17 +26,21 @@ void meDMUIPageBased::DrawPage()
 
 		drawing.store(true);
 
-		if (OnBeginDraw)
-			OnBeginDraw(*this);
+		auto avail = dmui::ui::GetContentRegionAvail();
+		if (avail.y >= 300.f || avail.x >= 300.f)
+		{
+			if (OnBeginDraw)
+				OnBeginDraw(*this);
 
-		auto managerPages = meDMUIPageManager::GetSingleton();
-		if (!managerPages->IsProcessingUpdate())
-			DoDrawPage();
-		else if (spinner)
-			spinner->Draw();
+			auto managerPages = meDMUIPageManager::GetSingleton();
+			if (!managerPages->IsProcessingUpdate())
+				DoDrawPage();
+			else if (spinner)
+				spinner->Draw();
 
-		if (OnEndDraw)
-			OnEndDraw(*this);
+			if (OnEndDraw)
+				OnEndDraw(*this);
+		}
 
 		drawing.store(false);
 	}

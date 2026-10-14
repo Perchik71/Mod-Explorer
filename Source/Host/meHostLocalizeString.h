@@ -1,6 +1,7 @@
 #pragma once
 
 #include <DearModdingUI/Client.h>
+#include <DearModdingUI/Localization.h>
 
 // Common
 static dmui::localize::LocalizeString lsGeneralCategory("$GeneralCategory", "General");
@@ -42,3 +43,7 @@ static dmui::localize::LocalizeString lsExplorerPageBuyAll("$ExplorerPageBuyAll"
 static dmui::localize::LocalizeString lsExplorerPageBuy("$ExplorerPageBuy", "Take");
 static dmui::localize::LocalizeString lsExplorerPageShowModel("$ExplorerPageShowModel", "Show model");
 static dmui::localize::LocalizeString lsExplorerPageCount("$ExplorerPageCount", "Count");
+
+// Basket page
+static dmui::localize::LocalizeString lsBasketCount("$ExplorerPageBuyAll", "Take All");
+static dmui::localize::LocalizeString lsBasketPageNoGoodState("$BasketPageNoGoodState", "You have to log in to the game before you can purchase anything here!");

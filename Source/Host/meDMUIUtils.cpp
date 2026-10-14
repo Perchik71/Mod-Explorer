@@ -36,6 +36,12 @@ void DMUI_Image(dmui::Client* a_client, const std::shared_ptr<dmui::Texture> a_t
 	(void)dmui::ui::Image(a_texture->GetHandle(), { a_w, a_h });
 }
 
+void DMUI_QuotteRect(DmVec2 a_min, DmVec2 a_max) noexcept
+{
+	dmui::ui::WindowDrawList().AddRect(a_min, a_max, DMUI_COL32(255, 255, 255, 96), 4.f);
+	dmui::ui::WindowDrawList().AddRectFilled(a_min, a_max, DMUI_COL32(255, 255, 255, 24), 4.f);
+}
+
 double GetTime() noexcept
 {
 	// Get the duration elapsed since the clock's epoch

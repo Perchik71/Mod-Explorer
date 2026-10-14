@@ -16,6 +16,8 @@
     <ClCompile Include="Source\Host\meDMUIUtils.cpp" />
     <ClCompile Include="Source\Host\meDMUIPageManager.cpp" />
     <ClCompile Include="Source\Host\meDMUIPageExplorer.cpp" />
+    <ClCompile Include="Source\meBasket.cpp" />
+    <ClCompile Include="Source\Host\meDMUIPageBasket.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\mePlugin.h" />
@@ -35,6 +37,8 @@
     <ClInclude Include="Source\Host\meHostLocalizeString.h" />
     <ClInclude Include="Source\Host\meDMUIPageManager.h" />
     <ClInclude Include="Source\Host\meDMUIPageExplorer.h" />
+    <ClInclude Include="Source\meBasket.h" />
+    <ClInclude Include="Source\Host\meDMUIPageBasket.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources\Mod-Explorer.rc" />

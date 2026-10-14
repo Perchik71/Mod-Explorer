@@ -11,6 +11,7 @@
 #define IDB_NOTE                        107
 #define IDB_WEAPON                      108
 #define IDB_STAR                        109
+#define IDB_BASKET                      110
 
 // Next default values for new objects
 // 

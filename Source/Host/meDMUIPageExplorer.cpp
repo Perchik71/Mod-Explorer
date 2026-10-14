@@ -1,6 +1,7 @@
 #include "meDMUIPageExplorer.h"
 #include "meHostLocalizeString.h"
 #include "../../Resources/resource.h"
+#include "../meBasket.h"
 
 #include <DearModdingUI/Client.h>
 #include <format>
@@ -233,7 +234,7 @@ void meDMUIPageExplorer::DoDrawPage()
 	static uint16_t countMinForBuy = 1;
 	static uint16_t countMaxForBuy = 500;
 	static int32_t selectPluginIdList = -1;
-	static int32_t selectItemIdList = selectedShopItemId.load();
+	static int32_t selectItemIdList = GetSelectedShopItemId();
 
 	static dmui::ui::Vec2 sizeSearchText{};
 	static dmui::ui::Vec2 sizeCountText{};
@@ -520,13 +521,15 @@ void meDMUIPageExplorer::DoDrawPage()
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
 					dmui::ui::BeginDisabled(!itemShopList.size());
-					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buyall",
-						lsExplorerPageBuyAll.GetValue()).c_str());
+					if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buyall",
+						lsExplorerPageBuyAll.GetValue()).c_str()))
+						meBasket::GetSingleton()->Append(itemShopList, countForBuy);
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
 					dmui::ui::BeginDisabled(GetSelectedShopItemId() == -1);
-					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buy",
-						lsExplorerPageBuy.GetValue()).c_str());
+					if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buy",
+						lsExplorerPageBuy.GetValue()).c_str()))
+						meBasket::GetSingleton()->Append(itemShopList[selectItemIdList], countForBuy);
 					dmui::ui::SameLine(0, 30.f);
 					posXCount = dmui::ui::GetCursorPosX() - posXCount;
 					dmui::ui::Text(lsExplorerPageCount); dmui::ui::SameLine();

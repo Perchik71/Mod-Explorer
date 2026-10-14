@@ -16,10 +16,13 @@
 #include "meDMUIPageManager.h"
 #include "meDMUIPageGeneralInfo.h"
 #include "meDMUIPageExplorer.h"
+#include "meDMUIPageBasket.h"
 #include "meHostLocalizeString.h"
+#include "../meBasket.h"
 
 static std::shared_ptr<meDMUIPageGeneralInfo> globalPageGeneralInfo{};
 static std::shared_ptr<meDMUIPageExplorer> globalPageExplorer{};
+static std::shared_ptr<meDMUIPageBasket> globalPageBasket{};
 
 using namespace std::literals;
 
@@ -35,7 +38,7 @@ void meDMUIClient::RendererExplorerPage() noexcept
 
 void meDMUIClient::RendererBasketPage() noexcept
 {
-	dmui::ui::Text("Hello World!");
+	meDMUIPageManager::GetSingleton()->DrawPage(2);
 }
 
 std::string meDMUIClient::GetLocalizeFileName() const noexcept
@@ -99,14 +102,8 @@ bool meDMUIClient::Connect() noexcept
 		return false;
 	}
 
-	auto lfile = GetLocalizeFileName();
-	if (lfile.length() > 0)
-	{
-		auto localizeStringManager = dmui::localize::LocalizationManager::GetSingleton();
-		localizeStringManager->Init(lfile);
-		if (localizeStringManager->Exists())
-			localizeStringManager->Load();
-	}
+	auto localizeStringManager = dmui::localize::LocalizationManager::GetSingleton();
+	localizeStringManager->Load("ModExplorer");
 
 	if (!client->AddCategory({
 			.id = kCategoryGeneralId,
@@ -170,8 +167,10 @@ bool meDMUIClient::Connect() noexcept
 
 	globalPageGeneralInfo = std::make_shared<meDMUIPageGeneralInfo>(client);
 	globalPageExplorer = std::make_shared<meDMUIPageExplorer>(client);
+	globalPageBasket = std::make_shared<meDMUIPageBasket>(client);
 	meDMUIPageManager::GetSingleton()->RegisterPage(globalPageGeneralInfo);
 	meDMUIPageManager::GetSingleton()->RegisterPage(globalPageExplorer);
+	meDMUIPageManager::GetSingleton()->RegisterPage(globalPageBasket);
 
 	REX::INFO("meDMUIClient::Connect() Registered as '{}' with the dmui host"sv, kClientId);
 
@@ -187,6 +186,7 @@ void meDMUIClient::BeginUpdate() noexcept
 	globalPageExplorer->SetUpdateState(true);
 	globalPageExplorer->SetSelectedPluginId(-1);
 	managerPages->SetProcessingUpdate(true);
+	meBasket::GetSingleton()->Clear();
 }
 
 void meDMUIClient::EndUpdate() noexcept

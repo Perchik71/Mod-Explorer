@@ -33,6 +33,7 @@ using DmVec4	= dmui::ui::Vec4;
 [[nodiscard]] DmU32 DMUI_ColorConvertFloat4ToU32(const DmVec4& in) noexcept;
 
 void DMUI_Image(dmui::Client* a_client, const std::shared_ptr<dmui::Texture> a_texture, float a_w, float a_h) noexcept;
+void DMUI_QuotteRect(DmVec2 a_min, DmVec2 a_max) noexcept;
 
 [[nodiscard]] static inline DmVec2 operator+(const DmVec2& lhs, const DmVec2& rhs) noexcept
 {
