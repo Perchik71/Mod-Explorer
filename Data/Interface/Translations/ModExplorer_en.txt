@@ -1,0 +1,43 @@
+$GeneralCategory    General
+$CheatsCategory Cheats
+$GeneralPage    General
+$ExplorerPage   Explorer
+$BasketPage Basket
+$GeneralPageSummary Number of mods, and items that can be obtained, etc.
+$CheatsPageSummary  Searching for and receiving items
+$BasketPageSummary  Your shopping basket
+$GeneralPageNumPlugins  Installed plugins
+$GeneralPageNumPluginsName  Name
+$GeneralPageInfoCaption	Info
+$GeneralPageModAuthorCaption	Author
+$GeneralPageModSummaryCaption	Summary
+$GeneralPageModNoSelected	Select a plugin from the list
+$GeneralPageModInfoNotSpecified	Not specified
+$GeneralPageModTotalCaption Total
+$GeneralPageModRegularCaption Regular
+$GeneralPageModLightCaption Light
+$StarIcon	This item is a quest item and will break the quest, at your risk!
+$Warning	WARNING
+$All	All
+$Armor	Armor
+$Book	Book
+$Misc	Misc
+$Weapon	Weapon
+$Ammo	Ammo
+$Key	Key
+$Alchemy	Alchemy
+$Note	Note
+$Type	Type
+$Fullname	Full name
+$Search	Search
+$ExplorerPageBuyAll	Take All
+$ExplorerPageBuy	Take
+$ExplorerPageShowModel	Show model
+$ExplorerPageCount	Count
+$BasketPageNoGoodState	You have to log in to the game before you can purchase anything here!
+$BasketPageWeight	Weight
+$BasketPageCaps	Caps
+$BasketPagePlayer Player
+$BasketPageTakeFree	Take Free
+$BasketPageBuy	Buy
+$BasketPageClear	Clear
