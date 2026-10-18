@@ -26,6 +26,7 @@
     <ClCompile Include="Source\meError.cpp" />
     <ClCompile Include="Source\meMain.cpp" />
     <ClCompile Include="Source\mePlugin.cpp" />
+    <ClCompile Include="Source\mePreviewModelSystem.cpp" />
     <ClCompile Include="Source\meUtils.cpp" />
     <ClCompile Include="Source\Host\TextureLoader.cpp" />
   </ItemGroup>
@@ -47,6 +48,7 @@
     <ClInclude Include="Source\meError.h" />
     <ClInclude Include="Source\mePlugin.h" />
     <ClInclude Include="Source\mePluginInfo.h" />
+    <ClInclude Include="Source\mePreviewModelSystem.h" />
     <ClInclude Include="Source\meUtils.h" />
     <ClInclude Include="Source\Host\TextureLoader.h" />
   </ItemGroup>

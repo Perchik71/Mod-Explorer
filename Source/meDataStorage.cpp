@@ -333,37 +333,37 @@ void meDataStorage::AddItem(meItemType a_type, const RE::TESForm* a_form) noexce
 void meDataStorage::AddRange(meItemType a_type, const RE::BSTArray<RE::TESForm*>& a_arr) noexcept
 {
 	auto size = a_arr.size();
-	if (size < 100)	// Single-thread mode
+//	if (size < 100)	// Single-thread mode
 	{
 		for (auto form : a_arr)
 			AddItem(a_type, form);
 	}
-	else			// Multithreads mode
-	{
-		std::atomic_bool a[4]{};
+	//else			// Multithreads mode
+	//{
+	//	std::atomic_bool a[4]{};
 
-		auto count = size / 4;
-		auto worker = [&](uint32_t begin, uint32_t end, uint32_t a_idx) {
+	//	auto count = size / 4;
+	//	auto worker = [&](uint32_t begin, uint32_t end, uint32_t a_idx) {
 
-			for (uint32_t i = begin; i < end; i++)
-				AddItem(a_type, a_arr[i]);
+	//		for (uint32_t i = begin; i < end; i++)
+	//			AddItem(a_type, a_arr[i]);
 
-			a[a_idx].store(true);
-			};
+	//		a[a_idx].store(true);
+	//		};
 
-		std::thread t1(worker, 0u, count, 0u);
-		std::thread t2(worker, count, count << 1, 1u);
-		std::thread t3(worker, count << 1, count * 3, 2u);
-		std::thread t4(worker, count * 3, size, 3u);
+	//	std::thread t1(worker, 0u, count, 0u);
+	//	std::thread t2(worker, count, count << 1, 1u);
+	//	std::thread t3(worker, count << 1, count * 3, 2u);
+	//	std::thread t4(worker, count * 3, size, 3u);
 
-		t1.detach();
-		t2.detach();
-		t3.detach();
-		t4.detach();
+	//	t1.detach();
+	//	t2.detach();
+	//	t3.detach();
+	//	t4.detach();
 
-		while (!a[0].load() || !a[1].load() || !a[2].load() || !a[3].load())
-			std::this_thread::sleep_for(5ms);
-	}
+	//	while (!a[0].load() || !a[1].load() || !a[2].load() || !a[3].load())
+	//		std::this_thread::sleep_for(5ms);
+	//}
 }
 
 uint32_t meDataStorage::GetModCount() const noexcept

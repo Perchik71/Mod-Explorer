@@ -18,6 +18,7 @@
     <ClCompile Include="Source\Host\meDMUIPageExplorer.cpp" />
     <ClCompile Include="Source\meBasket.cpp" />
     <ClCompile Include="Source\Host\meDMUIPageBasket.cpp" />
+    <ClCompile Include="Source\mePreviewModelSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\mePlugin.h" />
@@ -39,6 +40,7 @@
     <ClInclude Include="Source\Host\meDMUIPageExplorer.h" />
     <ClInclude Include="Source\meBasket.h" />
     <ClInclude Include="Source\Host\meDMUIPageBasket.h" />
+    <ClInclude Include="Source\mePreviewModelSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources\Mod-Explorer.rc" />

@@ -2,6 +2,7 @@
 #include "meHostLocalizeString.h"
 #include "../../Resources/resource.h"
 #include "../meBasket.h"
+#include "../mePreviewModelSystem.h"
 
 #include <DearModdingUI/Client.h>
 #include <format>
@@ -516,9 +517,12 @@ void meDMUIPageExplorer::DoDrawPage()
 
 					dmui::ui::Dummy({ 0.f, 0.f });
 					auto posXCount = dmui::ui::GetCursorPosX();
-					dmui::ui::BeginDisabled();	/* TODO */
-					(void)dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.show",
-						lsExplorerPageShowModel.GetValue()).c_str());
+					dmui::ui::BeginDisabled(!mePreviewModelSystem::GetSingleton()->IsInit() || GetSelectedShopItemId() == -1);
+					if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.show",
+						lsExplorerPageShowModel.GetValue()).c_str()))
+					{
+						//RenderModel(const_cast<RE::TESForm*>(itemShopList[selectItemIdList].form));
+					}
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
 					dmui::ui::BeginDisabled(!itemShopList.size());
@@ -551,6 +555,13 @@ void meDMUIPageExplorer::DoDrawPage()
 
 void meDMUIPageExplorer::DoRequestUpdate()
 {
+}
+
+void meDMUIPageExplorer::RenderModel(RE::TESForm* a_targetForm) noexcept
+{
+	auto preview = mePreviewModelSystem::GetSingleton();
+	if (preview->LoadModel(a_targetForm))
+		REX::INFO("successed");
 }
 
 void meDMUIPageExplorer::DoRequestUpdateItems()
@@ -804,6 +815,8 @@ meDMUIPageExplorer::meDMUIPageExplorer(const std::shared_ptr<dmui::Client>& a_cl
 	textureStar = dmui::TextureLoader::LoadFromResource(dmui::TextureLoader::Format::kDDS, IDB_STAR, "DDS");
 	if (!textureStar)
 		REX::ERROR("PME::meDMUIPageExplorer() failed load assets"sv);
+
+	mePreviewModelSystem::GetSingleton()->Init();
 }
 
 int32_t meDMUIPageExplorer::GetSelectedPluginId() const noexcept

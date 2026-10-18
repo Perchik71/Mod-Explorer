@@ -59,8 +59,6 @@ void DMUI_SetItemTooltip(dmui::Client* a_client, const std::string_view& a_desc,
 	}
 }
 
-
-
 double GetTime() noexcept
 {
 	// Get the duration elapsed since the clock's epoch

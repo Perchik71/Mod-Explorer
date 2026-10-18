@@ -13,6 +13,9 @@ void meDMUIPageBasket::DoDrawPage()
 	auto availWidthMainCol = avail.x * .67f;
 	auto availHeightTable = avail.y - (metrics.framePadding.y * 3) - sizeOrderColumn.y;
 
+	//DoDrawPopupFailed_1();
+	//DoDrawPopupFailed_2();
+
 	if (dmui::ui::BeginTable("##dearmodding.modexplorer.page.basket.body", 2/*,
 		dmui::ui::TableFlags::kNone, { -1.f, availHeightTable-1.f }*/))
 	{
@@ -262,7 +265,19 @@ void meDMUIPageBasket::DoDrawPage()
 
 			if (basket->IsGoodState())
 			{
-
+				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.takefree",
+					lsExplorerPageBuyAll.GetValue()).c_str()))
+					if (!meBasket::GetSingleton()->RunOp(meBasket::TOperations::kTake))
+					dmui::ui::OpenPopup(failed_id1);
+				dmui::ui::SameLine();
+				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.buy",
+					lsExplorerPageBuyAll.GetValue()).c_str()))
+					if (!meBasket::GetSingleton()->RunOp(meBasket::TOperations::kBuy))
+						dmui::ui::OpenPopup(failed_id2);
+				dmui::ui::SameLine();
+				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.clear",
+					lsExplorerPageBuyAll.GetValue()).c_str()))
+					meBasket::GetSingleton()->Clear();
 			}
 			else
 			{
@@ -272,32 +287,6 @@ void meDMUIPageBasket::DoDrawPage()
 			}
 		}
 
-		/*	
-			if (basket->IsBuyMode())
-			{
-				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.buy",
-					lsExplorerPageBuy.GetValue()).c_str()))
-				{
-
-				}
-			}
-			else if (basket->IsSellMode())
-			{
-				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.buy",
-					lsExplorerPageBuy.GetValue()).c_str()))
-				{
-
-				}
-			}
-
-			if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.clear",
-				lsExplorerPageBuy.GetValue()).c_str()))
-			{
-
-			}*/
-
-
-
 		dmui::ui::PopStyleVar(2);
 		dmui::ui::EndTable();
 	}
@@ -306,6 +295,43 @@ void meDMUIPageBasket::DoDrawPage()
 void meDMUIPageBasket::DoRequestUpdate()
 {
 	meBasket::GetSingleton()->Clear();
+}
+
+void meDMUIPageBasket::DoDrawPopupFailed_1() noexcept
+{
+	if (dmui::ui::BeginPopup(failed_id1))
+	{
+		dmui::ui::PushTextWrapPos(dmui::ui::GetFontSize() * 35.f);
+		dmui::ui::TextColored(theme.error, "FAILED");
+		dmui::ui::PopTextWrapPos();
+		dmui::ui::Separator();
+		if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.popup.failed", "tttt").c_str()))
+		{
+			openedPopups[0] = false;
+			dmui::ui::CloseCurrentPopup();
+		}
+
+		dmui::ui::EndPopup();
+	}
+}
+
+void meDMUIPageBasket::DoDrawPopupFailed_2() noexcept
+{
+	static bool f = true;
+	if (dmui::ui::BeginPopupModal(failed_id2, f))
+	{
+		dmui::ui::PushTextWrapPos(dmui::ui::GetFontSize() * 35.f);
+		dmui::ui::TextColored(theme.error, "FAILED");
+		dmui::ui::PopTextWrapPos();
+		dmui::ui::Separator();
+		/*if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.popup.failed", "tttt").c_str()))
+		{
+			openedPopups[0] = false;
+			dmui::ui::CloseCurrentPopup();
+		}*/
+
+		dmui::ui::EndPopup();
+	}
 }
 
 meDMUIPageBasket::meDMUIPageBasket(const std::shared_ptr<dmui::Client>& a_client) :

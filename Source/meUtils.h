@@ -1,6 +1,7 @@
 #pragma once
 
 #include <RE/T/TESObjectREFR.h>
+#include <RE/B/BSSpinLock.h>
 
 #include <ranges>
 

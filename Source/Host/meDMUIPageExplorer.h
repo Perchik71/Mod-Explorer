@@ -5,6 +5,10 @@
 
 #include <atomic>
 
+#include <RE/T/TESForm.h>
+#include <RE/I/Interface3D.h>
+#include <RE/B/BSGraphics.h>
+
 class meDMUIPageExplorer :
 	public meDMUIPageBased
 {
@@ -28,9 +32,14 @@ private:
 	std::array<char, 128> textExplorerSearchItem{};
 	std::array<char, 128> textExplorerSearchItemDone{};
 	std::shared_ptr<dmui::Texture> textureStar{};
+	std::shared_ptr<dmui::Texture> texturePreview{};
+	std::atomic_uint32_t formPreview = 0;
+	RE::Interface3D::Renderer* renderer{ nullptr };
 
 	void DoDrawPage() override;
 	void DoRequestUpdate() override;
+
+	void RenderModel(RE::TESForm* a_targetForm) noexcept;
 
 	void DoRequestUpdateItems();
 	void DoRequestSearchPlugins();

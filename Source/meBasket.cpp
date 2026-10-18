@@ -15,6 +15,48 @@
 #include <RE/P/PlayerCharacter.h>
 #include <RE/T/TESBoundObject.h>
 
+class ScopeCriticalLock
+{
+	REX::W32::CRITICAL_SECTION* critical{ nullptr };
+
+	ScopeCriticalLock(const ScopeCriticalLock&) = delete;
+	ScopeCriticalLock(ScopeCriticalLock&&) = delete;
+	ScopeCriticalLock& operator=(const ScopeCriticalLock&) = delete;
+	ScopeCriticalLock& operator=(ScopeCriticalLock&&) = delete;
+public:
+	ScopeCriticalLock(const REX::W32::CRITICAL_SECTION& a_lock) noexcept : critical(std::addressof(const_cast<REX::W32::CRITICAL_SECTION&>(a_lock)))
+	{
+		if (critical)
+			REX::W32::EnterCriticalSection(critical);
+	};
+	~ScopeCriticalLock() noexcept
+	{
+		if (critical)
+			REX::W32::LeaveCriticalSection(critical);
+
+	}
+};
+
+meBasket::meBasket()
+{
+	REX::W32::InitializeCriticalSection(&locker);
+}
+
+meBasket::~meBasket()
+{
+	REX::W32::DeleteCriticalSection(&locker);
+}
+
+void meBasket::Lock() const noexcept
+{
+	REX::W32::EnterCriticalSection(&const_cast<meBasket*>(this)->locker);
+}
+
+void meBasket::Unlock() const noexcept
+{
+	REX::W32::LeaveCriticalSection(&const_cast<meBasket*>(this)->locker);
+}
+
 void meBasket::Append(const meItem& a_item, uint32_t a_count) noexcept
 {
 	if (a_count < 1)
@@ -26,7 +68,7 @@ void meBasket::Append(const meItem& a_item, uint32_t a_count) noexcept
 		mode.store(TMode::kBuy);
 	}
 
-	RE::BSAutoWriteLock guard{ locker };
+	ScopeCriticalLock guard{ locker };
 
 	a_count = std::min(a_count, MAX_NUM);
 	auto it = list.find(a_item);
@@ -71,7 +113,7 @@ void meBasket::Append(const meItemList& a_list, uint32_t a_count) noexcept
 		mode.store(TMode::kBuy);
 	}
 
-	RE::BSAutoWriteLock guard{ locker };
+	ScopeCriticalLock guard{ locker };
 
 	auto num = std::min(a_count, MAX_NUM);
 	for (auto& item : a_list)
@@ -119,7 +161,7 @@ void meBasket::AppendFromInventoryPlayer() noexcept
 		mode.store(TMode::kSell);
 	}
 
-	RE::BSAutoWriteLock guard{ locker };
+	ScopeCriticalLock guard{ locker };
 
 	auto player = RE::PlayerCharacter::GetSingleton();
 	if (!player)
@@ -207,7 +249,7 @@ void meBasket::AppendFromInventoryPlayer() noexcept
 
 void meBasket::Remove(size_t a_idx) noexcept
 {
-	RE::BSAutoWriteLock guard{ locker };
+	ScopeCriticalLock guard{ locker };
 
 	if (a_idx >= list.size())
 		return;
@@ -233,7 +275,7 @@ void meBasket::Remove(size_t a_idx) noexcept
 
 void meBasket::Clear() noexcept
 {
-	RE::BSAutoWriteLock guard{ locker };
+	ScopeCriticalLock guard{ locker };
 
 	list.clear();
 	mode.store(TMode::kBuy);
@@ -243,7 +285,7 @@ void meBasket::Clear() noexcept
 
 bool meBasket::RunOp(TOperations a_op) noexcept
 {
-	RE::BSAutoReadLock guard{ locker };
+	ScopeCriticalLock guard{ locker };
 
 	auto player = RE::PlayerCharacter::GetSingleton();
 	if (!player)
@@ -264,9 +306,12 @@ bool meBasket::RunOp(TOperations a_op) noexcept
 	if (a_op == TOperations::kTake)
 	{
 		for (auto& item : list)
+		{
+			//REX::INFO("Debug: take {} in count {}", item.first.name, item.second);
 			playerInvList->AddItem2(
 				const_cast<RE::TESBoundObject*>(reinterpret_cast<const RE::TESBoundObject*>(item.first.form)),
 				item.second);
+		}
 	}
 	else if (a_op == TOperations::kBuy)
 	{

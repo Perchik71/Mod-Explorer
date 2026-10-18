@@ -1,6 +1,7 @@
 #pragma once
 
 #include "meDataStorage.h"
+#include <REX/REX.h>
 
 #include <atomic>
 
@@ -31,7 +32,7 @@ class meBasket :
 	};
 
 	meBasketItemList list{};
-	RE::BSReadWriteLock locker{};
+	REX::W32::CRITICAL_SECTION locker{};
 	std::atomic<TMode> mode{ TMode::kBuy };
 	std::atomic<float> weight{ 0.f };
 	std::atomic<uint32_t> price{ 0 };
@@ -43,8 +44,8 @@ class meBasket :
 public:
 	constexpr inline static auto MAX_NUM = static_cast<uint32_t>(std::numeric_limits<int16_t>::max());
 
-	meBasket() = default;
-	~meBasket() = default;
+	meBasket();
+	~meBasket();
 
 	enum class TOperations : uint8_t
 	{
@@ -60,8 +61,8 @@ public:
 	inline meBasketItemList::const_iterator cbegin() noexcept { return list.cbegin(); }
 	inline meBasketItemList::const_iterator cend() noexcept { return list.cend(); }
 
-	void Lock() const noexcept { const_cast<meBasket*>(this)->locker.lock_read(); }
-	void Unlock() const noexcept { const_cast<meBasket*>(this)->locker.unlock_read(); }
+	void Lock() const noexcept;
+	void Unlock() const noexcept;
 
 	void Append(const meItem& a_item, uint32_t a_count = 1) noexcept;
 	void Append(const meItemList& a_list, uint32_t a_count = 1) noexcept;
