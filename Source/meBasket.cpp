@@ -33,7 +33,6 @@ public:
 	{
 		if (critical)
 			REX::W32::LeaveCriticalSection(critical);
-
 	}
 };
 

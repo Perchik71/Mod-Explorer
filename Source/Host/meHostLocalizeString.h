@@ -51,3 +51,6 @@ static dmui::localize::LocalizeString lsBasketPagePlayer("$BasketPagePlayer", "P
 static dmui::localize::LocalizeString lsBasketPageNoGoodState("$BasketPageNoGoodState", "You have to log in to the game before you can purchase anything here!");
 static dmui::localize::LocalizeString lsBasketPageCaps("$BasketPageCaps", "Caps");
 static dmui::localize::LocalizeString lsBasketPageWeight("$BasketPageWeight", "Weight");
+static dmui::localize::LocalizeString lsBasketPageTakeFree("$BasketPageTakeFree", "Take Free");
+static dmui::localize::LocalizeString lsBasketPageBuy("$BasketPageBuy", "Buy");
+static dmui::localize::LocalizeString lsBasketPageClear("$BasketPageClear", "Clear");

@@ -261,22 +261,24 @@ void meDMUIPageBasket::DoDrawPage()
 
 			dmui::ui::Spacing();
 			dmui::ui::Separator();
-			dmui::ui::Spacing();
+			dmui::ui::Dummy({ 1.f, 4.f });
 
 			if (basket->IsGoodState())
 			{
 				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.takefree",
-					lsExplorerPageBuyAll.GetValue()).c_str()))
+					lsBasketPageTakeFree.GetValue()).c_str()))
 					if (!meBasket::GetSingleton()->RunOp(meBasket::TOperations::kTake))
-					dmui::ui::OpenPopup(failed_id1);
+						dmui::ui::OpenPopup(failed_id1);
 				dmui::ui::SameLine();
+				dmui::ui::SetCursorPosX(dmui::ui::GetCursorPosX() + 8.0f);
 				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.buy",
-					lsExplorerPageBuyAll.GetValue()).c_str()))
+					lsBasketPageBuy.GetValue()).c_str()))
 					if (!meBasket::GetSingleton()->RunOp(meBasket::TOperations::kBuy))
 						dmui::ui::OpenPopup(failed_id2);
 				dmui::ui::SameLine();
+				dmui::ui::SetCursorPosX(dmui::ui::GetCursorPosX() + 8.0f);
 				if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.basket.body.buttons.clear",
-					lsExplorerPageBuyAll.GetValue()).c_str()))
+					lsBasketPageClear.GetValue()).c_str()))
 					meBasket::GetSingleton()->Clear();
 			}
 			else
