@@ -25,6 +25,8 @@ jobs:
   build:
     name: Build Mod-Explorer Plugin
     runs-on: windows-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout repository
@@ -173,15 +175,15 @@ jobs:
           retention-days: 7
 
       - name: Create GitHub Release (if requested)
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         if: github.event.inputs.publish_release == 'true'
         with:
           tag_name: ${{ github.event.inputs.version_tag }}
           name: Mod-Explorer Plugin v${{ github.event.inputs.version_tag }}
           body_path: ${{ runner.temp }}/ModExplorer-Artifact/release-readme.md
+          generate_release_notes: true
           files: |
-            ${{ runner.temp }}/ModExplorer-Artifact/**
+            ${{ runner.temp }}/ModExplorer-Artifact/*
+            !${{ runner.temp }}/ModExplorer-Artifact/*.md
           draft: false
           prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
