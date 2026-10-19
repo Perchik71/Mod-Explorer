@@ -172,13 +172,20 @@ jobs:
         if: github.event.inputs.publish_release == 'true'
         shell: pwsh
         run: |
-          artifactRoot = Join-Path $env:RUNNER_TEMP "ModExplorer-Artifact"
+          $artifactRoot = Join-Path $env:RUNNER_TEMP "ModExplorer-Artifact"
           $zipPath = Join-Path $env:RUNNER_TEMP "Mod-Explorer-Plugin.zip"
 
           Get-ChildItem -Path (Join-Path $artifactRoot "*") -Exclude "release-readme.md" |
             Compress-Archive -DestinationPath $zipPath -Force
 
           Write-Host "ZIP archive created at: $zipPath" -ForegroundColor Green
+
+          Write-Host "`n=== Files inside the ZIP archive ===" -ForegroundColor Cyan
+          $filesInZip = Expand-Archive -Path $zipPath -List
+          foreach ($file in $filesInZip) {
+            Write-Host $file.FullName -ForegroundColor White
+          }
+          Write-Host "=== Total: $($filesInZip.Count) files ===" -ForegroundColor Cyan
 
       - name: Create GitHub Release (if requested)
         uses: softprops/action-gh-release@v3
