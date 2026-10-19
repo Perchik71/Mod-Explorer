@@ -108,11 +108,11 @@ jobs:
           ```
           3. **Launch Fallout 4 with F4SE**:
              - Make sure you have [Fallout 4 Script Extender (F4SE)](https://f4se.sircomposers.studio/) installed
-             - Add `-f4se` to your game launch options in Steam or your preferred launcher
+             - Add ```-f4se``` to your game launch options in Steam or your preferred launcher
 
           ### Release Contents
-          - `f4se/plugins/pme.dll` - The main plugin DLL
-          - `Interface/*/*.txt` - Localization files
+          - ```f4se/plugins/pme.dll``` - The main plugin DLL
+          - ```Interface/*/*.txt``` - Localization files
 
           ### Requirements
           - Windows 10/11 (64-bit)
@@ -172,8 +172,13 @@ jobs:
         if: github.event.inputs.publish_release == 'true'
         shell: pwsh
         run: |
-          Get-ChildItem -Path "${{ runner.temp }}/ModExplorer-Artifact/*" -Exclude "release-readme.md" | 
-          Compress-Archive -DestinationPath "${{ runner.temp }}/Mod-Explorer-Plugin.zip" -Force
+          artifactRoot = Join-Path $env:RUNNER_TEMP "ModExplorer-Artifact"
+          $zipPath = Join-Path $env:RUNNER_TEMP "Mod-Explorer-Plugin.zip"
+
+          Get-ChildItem -Path (Join-Path $artifactRoot "*") -Exclude "release-readme.md" |
+            Compress-Archive -DestinationPath $zipPath -Force
+
+          Write-Host "ZIP archive created at: $zipPath" -ForegroundColor Green
 
       - name: Create GitHub Release (if requested)
         uses: softprops/action-gh-release@v3
