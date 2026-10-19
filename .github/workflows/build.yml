@@ -111,8 +111,8 @@ jobs:
              - Add `-f4se` to your game launch options in Steam or your preferred launcher
 
           ### Release Contents
-          - `pme.dll` - The main plugin DLL
-          - `Interface\**\*.txt` - Localization files
+          - `f4se/plugins/pme.dll` - The main plugin DLL
+          - `Interface/*/*.txt` - Localization files
 
           ### Requirements
           - Windows 10/11 (64-bit)
@@ -147,17 +147,11 @@ jobs:
 
           $dataSource = "Data"
           if (Test-Path $dataSource) {
-            Get-ChildItem -Path $dataSource -Force | ForEach-Object {
-              $dest = Join-Path $artifactRoot $_.Name
-              if ($_.PSIsContainer) {
-                Copy-Item -Path $_.FullName -Destination $dest -Recurse -Force
-              } else {
-                Copy-Item -Path $_.FullName -Destination $artifactRoot -Force
-              }
-            }
-            Write-Host "Copied Data contents to artifact root (structure preserved)" -ForegroundColor Cyan
+              # Copy all contents directly into the root while maintaining structure
+              Copy-Item -Path "$dataSource\*" -Destination $artifactRoot -Recurse -Container -Force
+              Write-Host "Copied Data contents to artifact root (structure preserved)" -ForegroundColor Cyan
           } else {
-            Write-Warning "Data folder not found; skipping data copy"
+              Write-Warning "Data folder not found; skipping data copy"
           }
 
           if (Test-Path "release-readme.md") {
