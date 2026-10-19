@@ -176,9 +176,10 @@ jobs:
 
       - name: Archive ModExplorer Artifacts
         if: github.event.inputs.publish_release == 'true'
+        shell: pwsh
         run: |
-          cd "${{ runner.temp }}/ModExplorer-Artifact"
-          zip -r "${{ runner.temp }}/Mod-Explorer-Plugin.zip"
+          Get-ChildItem -Path "${{ runner.temp }}/ModExplorer-Artifact/*" -Exclude "release-readme.md" | 
+          Compress-Archive -DestinationPath "${{ runner.temp }}/Mod-Explorer-Plugin.zip" -Force
 
       - name: Create GitHub Release (if requested)
         uses: softprops/action-gh-release@v3
