@@ -32,8 +32,6 @@ jobs:
         
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-        with:
-          msbuild-version: '17.8'
           
       - name: Restore dependencies (submodules)
         run: |
