@@ -27,6 +27,7 @@
     <ClCompile Include="Source\meMain.cpp" />
     <ClCompile Include="Source\mePlugin.cpp" />
     <ClCompile Include="Source\mePreviewModelSystem.cpp" />
+    <ClCompile Include="Source\meSound.cpp" />
     <ClCompile Include="Source\meUtils.cpp" />
     <ClCompile Include="Source\Host\TextureLoader.cpp" />
   </ItemGroup>
@@ -49,6 +50,7 @@
     <ClInclude Include="Source\mePlugin.h" />
     <ClInclude Include="Source\mePluginInfo.h" />
     <ClInclude Include="Source\mePreviewModelSystem.h" />
+    <ClInclude Include="Source\meSound.h" />
     <ClInclude Include="Source\meUtils.h" />
     <ClInclude Include="Source\Host\TextureLoader.h" />
   </ItemGroup>
@@ -65,6 +67,10 @@
     <Image Include="Resources\note.dds" />
     <Image Include="Resources\star.dds" />
     <Image Include="Resources\weapon.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Resources\buy.wav" />
+    <Media Include="Resources\take.wav" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -150,7 +156,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>commonlibf4_vc22.lib;commonlib-shared_vc22.lib;spdlog_vc22.lib;Advapi32.lib;Bcrypt.lib;dxgi.lib;d3d11.lib;d3dcompiler.lib;ws2_32.lib;version.lib;Dbghelp.lib;shlwapi.lib;detours_vc22.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>commonlibf4_vc22.lib;commonlib-shared_vc22.lib;spdlog_vc22.lib;Advapi32.lib;Bcrypt.lib;dxgi.lib;d3d11.lib;d3dcompiler.lib;ws2_32.lib;version.lib;Dbghelp.lib;shlwapi.lib;winmm.lib;detours_vc22.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir).Lib\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>

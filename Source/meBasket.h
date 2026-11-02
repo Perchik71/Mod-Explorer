@@ -1,6 +1,7 @@
 #pragma once
 
 #include "meDataStorage.h"
+#include "meSound.h"
 #include <REX/REX.h>
 
 #include <atomic>
@@ -36,6 +37,8 @@ class meBasket :
 	std::atomic<TMode> mode{ TMode::kBuy };
 	std::atomic<float> weight{ 0.f };
 	std::atomic<uint32_t> price{ 0 };
+	meSoundFX takeFX{};
+	meSoundFX buyFX{};
 
 	meBasket(const meBasket&) = delete;
 	meBasket(meBasket&&) = delete;

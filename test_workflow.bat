@@ -1,0 +1,1 @@
+act workflow_dispatch -e event.json -P windows-latest=-self-hosted

@@ -1,4 +1,5 @@
 #include "meBasket.h"
+#include "..\Resources\resource.h"
 
 #include <RE/RTTI.h>
 #include <RE/IDs_RTTI.h>
@@ -39,6 +40,9 @@ public:
 meBasket::meBasket()
 {
 	REX::W32::InitializeCriticalSection(&locker);
+
+	(void)takeFX.LoadFromResource("WAVE", IDB_WAVE_TAKE);
+	(void)buyFX.LoadFromResource("WAVE", IDB_WAVE_BUY);
 }
 
 meBasket::~meBasket()
@@ -311,6 +315,9 @@ bool meBasket::RunOp(TOperations a_op) noexcept
 				const_cast<RE::TESBoundObject*>(reinterpret_cast<const RE::TESBoundObject*>(item.first.form)),
 				item.second);
 		}
+
+		if (list.size() > 0)
+			takeFX.Play();
 	}
 	else if (a_op == TOperations::kBuy)
 	{
@@ -335,6 +342,9 @@ bool meBasket::RunOp(TOperations a_op) noexcept
 			playerInvList->AddItem2(
 				const_cast<RE::TESBoundObject*>(reinterpret_cast<const RE::TESBoundObject*>(item.first.form)),
 				item.second);
+
+		if (list.size() > 0)
+			buyFX.Play();
 	}
 	else if (a_op == TOperations::kSell)
 	{
@@ -350,6 +360,9 @@ bool meBasket::RunOp(TOperations a_op) noexcept
 				item.second);
 		
 		playerInvList->AddItem2(moneyForm, shouldMoney);
+
+		if (list.size() > 0)
+			buyFX.Play();
 	}
 	else
 		return false;

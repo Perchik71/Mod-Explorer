@@ -19,6 +19,7 @@
     <ClCompile Include="Source\meBasket.cpp" />
     <ClCompile Include="Source\Host\meDMUIPageBasket.cpp" />
     <ClCompile Include="Source\mePreviewModelSystem.cpp" />
+    <ClCompile Include="Source\meSound.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\mePlugin.h" />
@@ -41,6 +42,7 @@
     <ClInclude Include="Source\meBasket.h" />
     <ClInclude Include="Source\Host\meDMUIPageBasket.h" />
     <ClInclude Include="Source\mePreviewModelSystem.h" />
+    <ClInclude Include="Source\meSound.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources\Mod-Explorer.rc" />
@@ -55,5 +57,9 @@
     <Image Include="Resources\note.dds" />
     <Image Include="Resources\star.dds" />
     <Image Include="Resources\weapon.dds" />
+  </ItemGroup>
+  <ItemGroup>
+    <Media Include="Resources\buy.wav" />
+    <Media Include="Resources\take.wav" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,6 @@
+{
+  "inputs": {
+    "publish_release": "false",
+    "version_tag": "v1.0.0"
+  }
+}
