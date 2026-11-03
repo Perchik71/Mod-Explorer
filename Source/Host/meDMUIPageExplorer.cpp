@@ -532,14 +532,22 @@ void meDMUIPageExplorer::DoDrawPage()
 					dmui::ui::BeginDisabled(!itemShopList.size());
 					if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buyall",
 						lsExplorerPageBuyAll.GetValue()).c_str()))
+					{
 						meBasket::GetSingleton()->Append(itemShopList, countForBuy);
+						countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ? 
+							countMinAmmoForBuy : countMinForBuy;
+					}
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
 					
 					dmui::ui::BeginDisabled(selItem == -1);
 					if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buy",
 						lsExplorerPageBuy.GetValue()).c_str()))
+					{
 						meBasket::GetSingleton()->Append(itemShopList[selectItemIdList], countForBuy);
+						countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ?
+							countMinAmmoForBuy : countMinForBuy;
+					}
 					dmui::ui::SameLine(0, 30.f);
 					posXCount = dmui::ui::GetCursorPosX() - posXCount;
 					dmui::ui::Text(lsExplorerPageCount); dmui::ui::SameLine();
