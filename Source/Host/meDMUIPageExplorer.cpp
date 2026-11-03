@@ -551,7 +551,7 @@ void meDMUIPageExplorer::DoDrawPage()
 					dmui::ui::SameLine(0, 30.f);
 					posXCount = dmui::ui::GetCursorPosX() - posXCount;
 					dmui::ui::Text(lsExplorerPageCount); dmui::ui::SameLine();
-					dmui::ui::SetNextItemWidth(avail.x - sizeCountText.x - posXCount);
+					dmui::ui::SetNextItemWidth(avail.x - sizeCountText.x - posXCount + dmui::ui::CalcTextSize(" ").x);
 
 					if (selectItemIdList != -1 && (selectItemIdList <= itemShopList.size()) && (itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ||
 						selectedShopTypeId.load() == 4)
