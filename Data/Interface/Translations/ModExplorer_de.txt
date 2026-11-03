@@ -1,0 +1,43 @@
+$GeneralCategory Allgemein
+$CheatsCategory Cheats
+$GeneralPage Allgemein
+$ExplorerPage Explorer
+$BasketPage	Einkaufs корзину
+$GeneralPageSummary Anzahl der Mods und Items, die erhalten werden können, usw.
+$CheatsPageSummary Suche und Erhalt von Items
+$BasketPageSummary Ihr Einkaufs korbs
+$GeneralPageNumPlugins Installierte Plugins
+$GeneralPageNumPluginsName Name
+$GeneralPageInfoCaption Info
+$GeneralPageModAuthorCaption Autor
+$GeneralPageModSummaryCaption Zusammenfassung
+$GeneralPageModNoSelected Wählen Sie ein Plugin aus der Liste
+$GeneralPageModInfoNotSpecified Nicht angegeben
+$GeneralPageModTotalCaption Gesamt
+$GeneralPageModRegularCaption Regulär
+$GeneralPageModLightCaption Leicht
+$StarIcon Dieses Item ist ein Quest-Item und wird das Quest beenden, auf eigene Gefahr!
+$Warning WARNUNG
+$All Alle
+$Armor Rüstung
+$Book Buch
+$Misc Verschiedenes
+$Weapon Waffe
+$Ammo Munition
+$Key Schlüssel
+$Alchemy Alchemie
+$Note Notiz
+$Type Typ
+$Fullname Vollständiger Name
+$Search Suche
+$ExplorerPageBuyAll Alle nehmen
+$ExplorerPageBuy Nehmen
+$ExplorerPageShowModel Modell anzeigen
+$ExplorerPageCount Anzahl
+$BasketPageNoGoodState Sie müssen sich beim Spiel anmelden, bevor Sie hier etwas kaufen können!
+$BasketPageWeight Gewicht
+$BasketPageCaps Caps
+$BasketPagePlayer Spieler
+$BasketPageTakeFree Kostenlos nehmen
+$BasketPageBuy Kaufen
+$BasketPageClear Leeren

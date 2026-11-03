@@ -1,0 +1,43 @@
+$GeneralCategory Général
+$CheatsCategory Triche
+$GeneralPage Général
+$ExplorerPage Explorateur
+$BasketPage Panier
+$GeneralPageSummary Nombre de mods et d'items pouvant être obtenus, etc.
+$CheatsPageSummary Recherche et réception d'items
+$BasketPageSummary Votre panier d'achat
+$GeneralPageNumPlugins Plugins installés
+$GeneralPageNumPluginsName Nom
+$GeneralPageInfoCaption Information
+$GeneralPageModAuthorCaption Auteur
+$GeneralPageModSummaryCaption Résumé
+$GeneralPageModNoSelected Sélectionnez un plugin dans la liste
+$GeneralPageModInfoNotSpecified Non spécifié
+$GeneralPageModTotalCaption Total
+$GeneralPageModRegularCaption Régulier
+$GeneralPageModLightCaption Léger
+$StarIcon Cet item est un objet de quête et va rompre la quête, à vos risques et périls!
+$Warning ATTENTION
+$All Tous
+$Armor Armure
+$Book Livre
+$Misc Divers
+$Weapon Arme
+$Ammo Munitions
+$Key Clé
+$Alchemy Alchimie
+$Note Note
+$Type Type
+$Fullname Nom complet
+$Search Recherche
+$ExplorerPageBuyAll Prendre tout
+$ExplorerPageBuy Prendre
+$ExplorerPageShowModel Montrer le modèle
+$ExplorerPageCount Compte
+$BasketPageNoGoodState Vous devez vous connecter au jeu avant de pouvoir acheter quelque chose
+$BasketPageWeight Poids
+$BasketPageCaps Caps
+$BasketPagePlayer Joueur
+$BasketPageTakeFree Prendre gratuitement
+$BasketPageBuy Acheter
+$BasketPageClear Vider

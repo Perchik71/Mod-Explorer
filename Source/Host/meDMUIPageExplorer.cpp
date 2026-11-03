@@ -234,6 +234,8 @@ void meDMUIPageExplorer::DoDrawPage()
 	static uint16_t countForBuy = 1;
 	static uint16_t countMinForBuy = 1;
 	static uint16_t countMaxForBuy = 500;
+	static uint16_t countMinAmmoForBuy = 500;
+	static uint16_t countMaxAmmoForBuy = 10000;
 	static int32_t selectPluginIdList = -1;
 	static int32_t selectItemIdList = GetSelectedShopItemId();
 
@@ -327,6 +329,7 @@ void meDMUIPageExplorer::DoDrawPage()
 					dmui::ui::PushStyleColor(dmui::ui::Color::kButton, prevColor);
 				if (dmui::ui::Button(a_id.c_str()))
 				{
+					countForBuy = a_typeId == 4 ? countMinAmmoForBuy : countMinForBuy;
 					selectedShopItemId.store(-1);
 					selectedShopTypeId.store(a_typeId);
 					SetSelectedShopItemId(-1);
@@ -517,7 +520,8 @@ void meDMUIPageExplorer::DoDrawPage()
 
 					dmui::ui::Dummy({ 0.f, 0.f });
 					auto posXCount = dmui::ui::GetCursorPosX();
-					dmui::ui::BeginDisabled(!mePreviewModelSystem::GetSingleton()->IsInit() || GetSelectedShopItemId() == -1);
+					auto selItem = GetSelectedShopItemId();
+					dmui::ui::BeginDisabled(!mePreviewModelSystem::GetSingleton()->IsInit() || selItem == -1);
 					if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.show",
 						lsExplorerPageShowModel.GetValue()).c_str()))
 					{
@@ -531,7 +535,8 @@ void meDMUIPageExplorer::DoDrawPage()
 						meBasket::GetSingleton()->Append(itemShopList, countForBuy);
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
-					dmui::ui::BeginDisabled(GetSelectedShopItemId() == -1);
+					
+					dmui::ui::BeginDisabled(selItem == -1);
 					if (dmui::ui::Button(std::format("{}##dearmodding.modexplorer.page.explorer.body.buttons.buy",
 						lsExplorerPageBuy.GetValue()).c_str()))
 						meBasket::GetSingleton()->Append(itemShopList[selectItemIdList], countForBuy);
@@ -539,8 +544,21 @@ void meDMUIPageExplorer::DoDrawPage()
 					posXCount = dmui::ui::GetCursorPosX() - posXCount;
 					dmui::ui::Text(lsExplorerPageCount); dmui::ui::SameLine();
 					dmui::ui::SetNextItemWidth(avail.x - sizeCountText.x - posXCount);
-					(void)dmui::ui::SliderScalar("##dearmodding.modexplorer.page.explorer.body.buttons.count",
-						std::addressof(countForBuy), std::addressof(countMinForBuy), std::addressof(countMaxForBuy));
+
+					if (selectItemIdList != -1 && (selectItemIdList <= itemShopList.size()) && (itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ||
+						selectedShopTypeId.load() == 4)
+					{
+						countForBuy = std::max(countMinAmmoForBuy, std::min(countForBuy, countMaxAmmoForBuy));
+						(void)dmui::ui::SliderScalar("##dearmodding.modexplorer.page.explorer.body.buttons.count",
+							std::addressof(countForBuy), std::addressof(countMinAmmoForBuy), std::addressof(countMaxAmmoForBuy));
+					}
+					else
+					{
+						countForBuy = std::max(countMinForBuy, std::min(countForBuy, countMaxAmmoForBuy));
+						(void)dmui::ui::SliderScalar("##dearmodding.modexplorer.page.explorer.body.buttons.count",
+							std::addressof(countForBuy), std::addressof(countMinForBuy), std::addressof(countMaxForBuy));
+					}
+
 					dmui::ui::EndDisabled();
 				}
 				else if (IsProcessingUpdateItems() && spinner)
