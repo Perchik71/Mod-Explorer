@@ -15,6 +15,90 @@
 #include <RE/B/BGSInventoryList.h>
 #include <RE/P/PlayerCharacter.h>
 #include <RE/T/TESBoundObject.h>
+#include <RE/S/Script.h>
+#include <RE/C/COMPILER_NAME.h>
+#include <RE/M/MemoryManager.h>
+
+namespace Script
+{
+	// Получение предметов через инвентарь в clib работает некорректно
+	// Делаем псевдоскрипт
+
+	class Invoker :
+		public REX::TSingleton<Invoker>
+	{
+		RE::Script* script{ nullptr };
+	public:
+		Invoker()
+		{
+			script = reinterpret_cast<RE::Script*>(RE::calloc(sizeof(RE::Script) + 0x100, 1));
+			if (script)
+			{
+				script->formFlags = 8;
+				script->formID = std::numeric_limits<std::uint32_t>::max();
+				script->formType = RE::ENUM_FORM_ID::kSCPT;
+			}
+			else
+				REX::CRITICAL(L"Invoker::script no init");
+		}
+
+		~Invoker()
+		{
+			if (script)
+			{
+				RE::free(script);
+				script = nullptr;
+			}
+		}
+
+		bool Invoke(const std::string_view& a_text)
+		{
+			if (!script || a_text.empty() || !a_text.length())
+				return false;
+
+			__try
+			{
+				// Восстановить адрес vtable Script так как сбрасывается на BaseFormComponent
+				(*(std::uintptr_t*)script) = RE::Script::VTABLE[0].address();
+
+				script->SetText(a_text);
+				script->CompileAndRun((RE::ScriptCompiler*)"bDecal", RE::COMPILER_NAME::kSystemWindow, nullptr);
+
+				return true;
+			}
+			__except (1)
+			{
+				return false;
+			}
+		}
+
+		bool InvokeFmt(const std::string_view& a_format, ...)
+		{
+			if (a_format.empty())
+				return false;
+
+			bool res = false;
+
+			va_list ap;
+			va_start(ap, &a_format);
+
+			auto len = vsnprintf(nullptr, 0, a_format.data(), ap);
+			if (len > 0)
+			{
+				auto buffer = std::make_unique<char[]>(static_cast<std::size_t>(len) + 1);
+				if (buffer)
+				{
+					vsnprintf(buffer.get(), len, a_format.data(), ap);
+					res = Invoke(buffer.get());
+				}
+			}
+
+			va_end(ap);
+
+			return res;
+		}
+	};
+}
 
 class ScopeCriticalLock
 {
@@ -288,6 +372,8 @@ void meBasket::Clear() noexcept
 
 bool meBasket::RunOp(TOperations a_op) noexcept
 {
+	using namespace std::literals;
+
 	ScopeCriticalLock guard{ locker };
 
 	auto player = RE::PlayerCharacter::GetSingleton();
@@ -311,9 +397,11 @@ bool meBasket::RunOp(TOperations a_op) noexcept
 		for (auto& item : list)
 		{
 			//REX::INFO("Debug: take {} in count {}", item.first.name, item.second);
-			playerInvList->AddItem2(
+			/*playerInvList->AddItem2(
 				const_cast<RE::TESBoundObject*>(reinterpret_cast<const RE::TESBoundObject*>(item.first.form)),
-				item.second);
+				item.second);*/
+			if (Script::Invoker::GetSingleton()->InvokeFmt("player.additem %X %d 1"sv, item.first.form->formID, item.second))
+				REX::ERROR("Failed additem {:X}"sv, item.first.form->formID);
 		}
 
 		if (list.size() > 0)
@@ -339,9 +427,13 @@ bool meBasket::RunOp(TOperations a_op) noexcept
 		moneyPlayerInv->stackData->count -= needMoney;
 
 		for (auto& item : list)
-			playerInvList->AddItem2(
+		{
+			/*playerInvList->AddItem2(
 				const_cast<RE::TESBoundObject*>(reinterpret_cast<const RE::TESBoundObject*>(item.first.form)),
-				item.second);
+				item.second);*/
+			if (Script::Invoker::GetSingleton()->InvokeFmt("player.additem %X %d 1"sv, item.first.form->formID, item.second))
+				REX::ERROR("Failed additem {:X}"sv, item.first.form->formID);
+		}
 
 		if (list.size() > 0)
 			buyFX.Play();
