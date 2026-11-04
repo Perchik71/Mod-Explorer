@@ -18,6 +18,32 @@
 #include <RE/S/Script.h>
 #include <RE/C/COMPILER_NAME.h>
 #include <RE/M/MemoryManager.h>
+#include "RE/S/Setting.h"
+
+namespace Utils
+{
+	enum class DifficultLevel
+	{
+		kVeryLow = 0,
+		kLow,
+		kNormal,		// (Vanilla default)
+		kHard,
+		kVeryHard,
+		kOneLife
+	};
+
+	static DifficultLevel GetCurrentDifficulty() noexcept
+	{
+		auto iniPrefs = RE::INIPrefSettingCollection::GetSingleton();
+		if (iniPrefs)
+		{
+			auto setting = iniPrefs->GetSetting("iDifficulty:Gameplay");
+			if (setting)
+				return static_cast<DifficultLevel>(setting->GetInt());
+		}
+		return DifficultLevel::kNormal;
+	}
+}
 
 namespace Script
 {
@@ -163,7 +189,10 @@ void meBasket::Append(const meItem& a_item, uint32_t a_count) noexcept
 	{
 		list.emplace(a_item, a_count);
 		price.fetch_add(a_item.price * a_count);
-		weight.fetch_add(a_item.weight * a_count);
+
+		if ((a_item.type != meItemType::kAmmoItem) ||
+			((a_item.type == meItemType::kAmmoItem) && (Utils::GetCurrentDifficulty() == Utils::DifficultLevel::kOneLife)))
+			weight.fetch_add(a_item.weight * a_count);
 	}
 	else
 	{
@@ -210,7 +239,10 @@ void meBasket::Append(const meItemList& a_list, uint32_t a_count) noexcept
 		{
 			list.emplace(item, a_count);
 			price.fetch_add(item.price * a_count);
-			weight.fetch_add(item.weight * a_count);
+
+			if ((item.type != meItemType::kAmmoItem) || 
+				((item.type == meItemType::kAmmoItem) && (Utils::GetCurrentDifficulty() == Utils::DifficultLevel::kOneLife)))
+				weight.fetch_add(item.weight * a_count);
 		}
 		else
 		{
