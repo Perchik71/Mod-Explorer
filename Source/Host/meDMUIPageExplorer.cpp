@@ -538,7 +538,7 @@ void meDMUIPageExplorer::DoDrawPage()
 							countMinAmmoForBuy : countMinForBuy;
 
 						(void)GetClient()->PostNotification(DMUI_STATUS_SEVERITY_INFO,
-							lsExplorerPageToastBuy.GetValue().c_str(), 3000, lsExplorerPageToastBuyAll.GetValue().c_str());
+							lsExplorerPageToastBuy.GetValue().c_str(), 5000, lsExplorerPageToastBuyAll.GetValue().c_str());
 					}
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
@@ -552,7 +552,7 @@ void meDMUIPageExplorer::DoDrawPage()
 							countMinAmmoForBuy : countMinForBuy;
 
 						(void)GetClient()->PostNotification(DMUI_STATUS_SEVERITY_INFO, 
-							lsExplorerPageToastBuy.GetValue().c_str(), 3000, lsExplorerPageBuy.GetValue().c_str());
+							lsExplorerPageToastBuy.GetValue().c_str(), 5000, lsExplorerPageBuy.GetValue().c_str());
 					}
 					dmui::ui::SameLine(0, 30.f);
 					posXCount = dmui::ui::GetCursorPosX() - posXCount;
