@@ -45,6 +45,8 @@ static dmui::localize::LocalizeString lsExplorerPageBuyAll("$ExplorerPageBuyAll"
 static dmui::localize::LocalizeString lsExplorerPageBuy("$ExplorerPageBuy", "Take");
 static dmui::localize::LocalizeString lsExplorerPageShowModel("$ExplorerPageShowModel", "Show model");
 static dmui::localize::LocalizeString lsExplorerPageCount("$ExplorerPageCount", "Count");
+static dmui::localize::LocalizeString lsExplorerPageToastBuy("$ExplorerPageToastBuy", "The item is now placed in the basket.");
+static dmui::localize::LocalizeString lsExplorerPageToastBuyAll("$ExplorerPageToastBuyAll", "Now all the items are placed in the basket.");
 
 // Basket page
 static dmui::localize::LocalizeString lsBasketPagePlayer("$BasketPagePlayer", "Player");

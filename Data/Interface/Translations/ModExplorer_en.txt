@@ -41,3 +41,5 @@ $BasketPagePlayer Player
 $BasketPageTakeFree	Take Free
 $BasketPageBuy	Buy
 $BasketPageClear	Clear
+$ExplorerPageToastBuy	The item is now placed in the basket.
+$ExplorerPageToastBuyAll	Now all the items are placed in the basket.

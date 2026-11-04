@@ -2,7 +2,7 @@ $GeneralCategory Allgemein
 $CheatsCategory Cheats
 $GeneralPage Allgemein
 $ExplorerPage Explorer
-$BasketPage	Einkaufs корзину
+$BasketPage	Einkaufs
 $GeneralPageSummary Anzahl der Mods und Items, die erhalten werden können, usw.
 $CheatsPageSummary Suche und Erhalt von Items
 $BasketPageSummary Ihr Einkaufs korbs
@@ -41,3 +41,5 @@ $BasketPagePlayer Spieler
 $BasketPageTakeFree Kostenlos nehmen
 $BasketPageBuy Kaufen
 $BasketPageClear Leeren
+$ExplorerPageToastBuy	Der Artikel wird nun in den Warenkorb gelegt.
+$ExplorerPageToastBuyAll	Jetzt werden alle Artikel in den Warenkorb gelegt.

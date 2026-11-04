@@ -536,6 +536,9 @@ void meDMUIPageExplorer::DoDrawPage()
 						meBasket::GetSingleton()->Append(itemShopList, countForBuy);
 						countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ? 
 							countMinAmmoForBuy : countMinForBuy;
+
+						(void)GetClient()->PostNotification(DMUI_STATUS_SEVERITY_INFO,
+							lsExplorerPageToastBuy.GetValue().c_str(), 3000, lsExplorerPageToastBuyAll.GetValue().c_str());
 					}
 					dmui::ui::SameLine();
 					dmui::ui::EndDisabled();
@@ -547,6 +550,9 @@ void meDMUIPageExplorer::DoDrawPage()
 						meBasket::GetSingleton()->Append(itemShopList[selectItemIdList], countForBuy);
 						countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ?
 							countMinAmmoForBuy : countMinForBuy;
+
+						(void)GetClient()->PostNotification(DMUI_STATUS_SEVERITY_INFO, 
+							lsExplorerPageToastBuy.GetValue().c_str(), 3000, lsExplorerPageBuy.GetValue().c_str());
 					}
 					dmui::ui::SameLine(0, 30.f);
 					posXCount = dmui::ui::GetCursorPosX() - posXCount;
