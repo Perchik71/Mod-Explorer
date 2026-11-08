@@ -6,7 +6,6 @@
 #include <atomic>
 
 #include <RE/T/TESForm.h>
-#include <RE/I/Interface3D.h>
 #include <RE/B/BSGraphics.h>
 
 class meDMUIPageExplorer :
@@ -21,6 +20,7 @@ public:
 		kSearchItems
 	};
 private:
+	std::atomic_bool rendererPreview = false;
 	std::atomic_int8_t selectedShopTypeId = -1;
 	std::atomic_int32_t selectedShopItemId = -1;
 	std::atomic_int32_t selectedPluginId = -1;
@@ -34,7 +34,7 @@ private:
 	std::shared_ptr<dmui::Texture> textureStar{};
 	std::shared_ptr<dmui::Texture> texturePreview{};
 	std::atomic_uint32_t formPreview = 0;
-	RE::Interface3D::Renderer* renderer{ nullptr };
+	dmui::ImageResource previewTexture{};
 
 	void DoDrawPage() override;
 	void DoRequestUpdate() override;

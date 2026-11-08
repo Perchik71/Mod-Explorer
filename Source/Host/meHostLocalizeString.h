@@ -47,6 +47,8 @@ static dmui::localize::LocalizeString lsExplorerPageShowModel("$ExplorerPageShow
 static dmui::localize::LocalizeString lsExplorerPageCount("$ExplorerPageCount", "Count");
 static dmui::localize::LocalizeString lsExplorerPageToastBuy("$ExplorerPageToastBuy", "The item is now placed in the basket.");
 static dmui::localize::LocalizeString lsExplorerPageToastBuyAll("$ExplorerPageToastBuyAll", "Now all the items are placed in the basket.");
+static dmui::localize::LocalizeString lsExplorerPageSearchModEmptyVal("$ExplorerPageSearchModEmptyVal", "Type something here to find the mod...");
+static dmui::localize::LocalizeString lsExplorerPageSearchItemEmptyVal("$ExplorerPageSearchItemEmptyVal", "Type something here to find the item...");
 
 // Basket page
 static dmui::localize::LocalizeString lsBasketPagePlayer("$BasketPagePlayer", "Player");

@@ -275,7 +275,7 @@ void meDMUIPageExplorer::DoDrawPage()
 			dmui::ui::Text("%s:", lsSearch.GetValue()); dmui::ui::SameLine();
 			dmui::ui::SetCursorPosY(safeY);
 			dmui::ui::SetNextItemWidth(width_main_column_1 - sizeSearchText.x);
-			if (dmui::ui::InputText("##dearmodding.modexplorer.page.explorer.body.searchinput.plugins",
+			if (dmui::ui::InputTextWithHint("##dearmodding.modexplorer.page.explorer.body.searchinput.plugins", lsExplorerPageSearchModEmptyVal,
 				textExplorerSearchPlugin.data(), textExplorerSearchPlugin.size(), dmui::ui::InputTextFlags::kEnterReturnsTrue))
 			{
 				selectPluginIdList = -1;
@@ -357,7 +357,7 @@ void meDMUIPageExplorer::DoDrawPage()
 			dmui::ui::Text("%s:", lsSearch.GetValue()); dmui::ui::SameLine();
 			dmui::ui::SetCursorPosY(safeY);
 			dmui::ui::SetNextItemWidth(clientRect.x - sizeSearchText.x);
-			if (dmui::ui::InputText("##dearmodding.modexplorer.page.explorer.body.searchinput.items",
+			if (dmui::ui::InputTextWithHint("##dearmodding.modexplorer.page.explorer.body.searchinput.items", lsExplorerPageSearchItemEmptyVal,
 				textExplorerSearchItem.data(), textExplorerSearchItem.size(), dmui::ui::InputTextFlags::kEnterReturnsTrue))
 			{
 				itemShopList.clear();
@@ -591,9 +591,9 @@ void meDMUIPageExplorer::DoRequestUpdate()
 
 void meDMUIPageExplorer::RenderModel(RE::TESForm* a_targetForm) noexcept
 {
-	auto preview = mePreviewModelSystem::GetSingleton();
-	if (preview->LoadModel(a_targetForm))
-		REX::INFO("successed");
+	//auto preview = mePreviewModelSystem::GetSingleton();
+	//if (preview->LoadModel(a_targetForm))
+	//	REX::INFO("successed");
 }
 
 void meDMUIPageExplorer::DoRequestUpdateItems()

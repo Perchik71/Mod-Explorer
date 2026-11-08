@@ -2,12 +2,11 @@
 
 #include <RE/RTTI.h>
 #include <RE/IDs_RTTI.h>
-#include <RE/N/NiUpdateData.h>
-#include <RE/B/BSGraphics.h>
 #include <RE/H/hkRefPtr.h>
 #include <RE/P/PlayerCamera.h>
 #include <RE/T/TESModel.h>
 #include <RE/B/BSModelDB.h>
+#include <RE/B/BSFadeNode.h>
 #include <RE/S/ShadowSceneNode.h>
 #include <RE/T/TESObjectARMO.h>
 #include <RE/T/TESObjectWEAP.h>
@@ -15,13 +14,156 @@
 
 using namespace std::literals;
 
-mePreviewModelSystem::~mePreviewModelSystem()
+namespace ID
 {
-	Shutdown();
+	namespace Inventory3DManager
+	{
+		REL::ID ctor{ 2249082 };
+		REL::ID dtor{ 2249083 };
+
+		REL::ID LoadInventoryItem2{ 2249088 };
+	}
+
+	namespace NiObject
+	{
+		REL::ID Clone{ 2269854 };
+	}
 }
 
-void mePreviewModelSystem::Init() noexcept
+namespace
 {
+	RE::NiPointer<RE::NiObject> CloneObject(RE::NiPointer<RE::NiNode>& a_model) noexcept
+	{
+		using func_t = decltype(&CloneObject);
+		static REL::Relocation<func_t> func{ ID::NiObject::Clone };
+		return func(a_model);
+	}
+}
+
+Inventory3DManager* Inventory3DManager::Create() noexcept
+{
+	auto result = reinterpret_cast<Inventory3DManager*>(RE::malloc(sizeof(Inventory3DManager)));
+	if (result)
+	{
+		using func_t = decltype(&Inventory3DManager::Release);	// just need only this for arg
+		static REL::Relocation<func_t> func{ ID::Inventory3DManager::ctor };
+		func(result);
+	}
+
+	return result;
+}
+
+void Inventory3DManager::Release(Inventory3DManager* a_mgr) noexcept
+{
+	using func_t = decltype(&Inventory3DManager::Release);
+	static REL::Relocation<func_t> func{ ID::Inventory3DManager::dtor };
+	func(a_mgr);
+}
+
+void Inventory3DManager::LoadInventoryItem(RE::TESForm* a_form, RE::ExtraDataList* a_extras, std::uint32_t a_unk) noexcept
+{
+	using func_t = decltype(&Inventory3DManager::LoadInventoryItem);
+	static REL::Relocation<func_t> func{ ID::Inventory3DManager::LoadInventoryItem2 };
+	func(this, a_form, a_extras, a_unk);
+}
+
+bool mePreviewModelSystem::LoadModel() noexcept
+{
+	Inventory3Dmgr->ClearModel();
+	Inventory3Dmgr->LoadInventoryItem(currentForm.load(), nullptr, 0);
+
+	/*if (loadedModel)
+		loadedModel->DeleteThis();
+
+	std::string path = "";
+	auto cform = currentForm.load();
+
+	switch (cform->formType.get())
+	{
+	case RE::ENUM_FORM_ID::kARMO:
+	{
+		auto form = reinterpret_cast<RE::TESObjectARMO*>(cform);
+		auto pathModel = form->worldModel[0].GetModel();
+		if (pathModel) path = pathModel;
+	}
+	break;
+	case RE::ENUM_FORM_ID::kWEAP:
+	{
+		auto form = reinterpret_cast<RE::TESObjectWEAP*>(cform);
+		auto pathModel = form->GetModel();
+		if (pathModel) path = pathModel;
+	}
+	break;
+	default:
+		auto form = reinterpret_cast<RE::TESModel*>(RE::RTDynamicCast((void*)cform, 0,
+			(void*)RE::RTTI::TESForm.address(), (void*)RE::RTTI::TESModel.address(), 0));
+		if (form)
+		{
+			auto pathModel = form->GetModel();
+			if (pathModel) path = pathModel;
+		}
+		break;
+	}
+
+	if (path.empty() || !path[0])
+	{
+		REX::ERROR("mePreviewModelSystem::LoadModel return failed, no path of model");
+		return false;
+	}
+
+	REX::DEBUG("mePreviewModelSystem::LoadModel path model {}"sv, path);
+
+	RE::BSModelDB::DBTraits::ArgsType args{};
+	args.loadTextures = true;
+	args.createFadeNode = true;
+
+	auto result = RE::BSModelDB::Demand(path.c_str(), &loadedModel, args);
+	REX::DEBUG("mePreviewModelSystem::LoadModel result {}"sv, std::to_underlying(result));
+
+	if ((result != RE::BSResource::ErrorCode::kNone) || !loadedModel)
+	{
+		REX::ERROR("mePreviewModelSystem::LoadModel return failed, BSModelDB::Demand return error {}, path of model \"{}\"",
+			std::to_underlying(result), path);
+		return false;
+	}
+
+	*/
+	return true;
+}
+
+bool mePreviewModelSystem::DrawModel() noexcept
+{
+	if (!renderer)
+	{
+		renderer = RE::Interface3D::Renderer::Create("ModExplorer_Preview3D"sv, RE::UI_DEPTH_PRIORITY::kStandard3DModel, .0f, 0);
+		if (!renderer)
+		{
+			REX::ERROR("mePreviewModelSystem::DrawModel return failed when created own renderer");
+			return false;
+		}
+	}
+
+	renderer->customRenderTarget = 1;
+	renderer->MainScreen_SetBackgroundMode(RE::Interface3D::BackgroundMode::kLive);
+	renderer->Offscreen_SetRenderTargetSize(RE::Interface3D::OffscreenMenuSize::kFullFrame);
+	renderer->MainScreen_EnableScreenAttached3DMasking("HUDShadow", nullptr);
+	renderer->Offscreen_SetPostEffect(RE::Interface3D::PostEffect::kNone);
+	renderer->clearColor = { 1.0f, 0.0f, 0.0f, 1.0f };
+	renderer->Enable(true);
+	renderer->Offscreen_Clear3D();
+
+	Inventory3Dmgr->EnableRendering("ModExplorer_Preview3D"sv);
+	Inventory3Dmgr->Begin3D();
+
+	
+
+
+	//Inventory3Dmgr->End3D();
+	//Inventory3Dmgr->DisableRendering("ModExplorer_Preview3D"sv);
+
+	
+
+
 	//auto camera = RE::PlayerCamera::GetSingleton();
 	//if (!camera)
 	//	REX::ERROR("mePreviewModelSystem::Init failed get camera"sv);
@@ -35,115 +177,115 @@ void mePreviewModelSystem::Init() noexcept
 	//		renderer->clearColor = { .0f, 1.0f, .0f, 0.5f, };
 	//	}
 	//}
+
+	/*auto clone = CloneObject(loadedModel);
+	if (!clone)
+	{
+		REX::ERROR("mePreviewModelSystem::DrawModel return failed when created clone model");
+		return false;
+	}*/
+
+
+//
+////	auto node = clone->IsFadeNode();
+////
+//	
+//	//renderer->MainScreen_SetWorldAttached3D(node);
+//	//renderer->MainScreen_RegisterGeometryRequiringFullViewport(node);
+//	renderer->Enable(true);
+//
+//	REX::INFO("RenderTarget: {}x{} id {}", renderer->Offscreen_GetRenderTargetWidth(), renderer->Offscreen_GetRenderTargetHeight(),
+//		renderer->customRenderTarget);
+//
+//	//node->local.scale = 1.0f;
+//	//auto& position = node->local.translate;
+//	//position.x = 0.f;
+//	//position.y = 375.f;
+//	//position.z = 0.f;
+//
+//	//RE::NiUpdateData updateData{};
+//	//auto result = SafeDrawModel(node, updateData);
+//	//if (!result)
+//	//	REX::ERROR("mePreviewModelSystem::DrawModel return failed when update model");
+//
+//	renderer->Release();
+
+	return true;
+}
+
+bool mePreviewModelSystem::SafeDrawModel(RE::NiNode* a_node, RE::NiUpdateData& a_data)
+{
+	__try
+	{
+		a_node->Update(a_data);
+		Inventory3Dmgr->Begin3D();
+
+
+
+
+
+		Inventory3Dmgr->End3D();
+
+		return true;
+	}
+	__except (1)
+	{
+		return false;
+	}
+}
+
+mePreviewModelSystem::~mePreviewModelSystem()
+{
+	Shutdown();
+}
+
+bool mePreviewModelSystem::Init() noexcept
+{
+	/*Inventory3Dmgr = Inventory3DManager::Create();
+	if (!Inventory3Dmgr)
+	{
+		REX::ERROR("mePreviewModelSystem::Init return failed when created Inventory3DManager");
+		return false;
+	}*/
+
+	return IsInit();
 }
 
 void mePreviewModelSystem::Shutdown() noexcept
 {
-	/*if (renderer)
+	while (busy.load())
+	{}
+
+	terminated.store(true);
+
+	if (Inventory3Dmgr)
 	{
-		renderer->Release();
-		renderer = nullptr;
-	}*/
+		Inventory3DManager::Release(Inventory3Dmgr);
+		Inventory3Dmgr = nullptr;
+	}
+
+	terminated.store(false);
 }
 
-bool mePreviewModelSystem::LoadModel(RE::TESForm* a_form) noexcept
+bool mePreviewModelSystem::Renderer(RE::TESForm* a_form) noexcept
 {
-	if (!a_form || !a_form->IsBoundObject())
+	if (terminated.load() || !IsInit() || !a_form || !a_form->IsBoundObject() || busy.load() || (currentForm.load() == a_form))
 		return false;
 
-	if (currentForm == a_form)
-		return true;
+	busy.store(true);
+	currentForm.store(a_form);
 
-	done.store(false);
-
-	if (loadedModel)
-		loadedModel->DeleteThis();
-
-	std::string path = "";
-
-	switch (a_form->formType.get())
+	if (!LoadModel())
 	{
-	case RE::ENUM_FORM_ID::kARMO:
-		{
-		auto form = reinterpret_cast<RE::TESObjectARMO*>(a_form);
-		auto pathModel = form->worldModel[0].GetModel();
-		if (pathModel) path = pathModel;
-		}
-		break;
-	case RE::ENUM_FORM_ID::kWEAP:
-		{
-		auto form = reinterpret_cast<RE::TESObjectWEAP*>(a_form);
-		auto pathModel = form->GetModel();
-		if (pathModel) path = pathModel;
-		}
-		break;
-	default:
-		auto form = reinterpret_cast<RE::TESModel*>(RE::RTDynamicCast((void*)a_form, 0,
-			(void*)RE::RTTI::TESForm.address(), (void*)RE::RTTI::TESModel.address(), 0));
-		if (form)
-		{
-			auto pathModel = form->GetModel();
-			if (pathModel) path = pathModel;
-		}
-		break;
-	}
-
-	if (path.empty() || !path[0])
-	{
-		done.store(true);
+		REX::ERROR("mePreviewModelSystem::Renderer return failed when loaded a model 0x{:X}", static_cast<std::uint32_t>(a_form->formID));
 		return false;
 	}
 
-	REX::DEBUG("mePreviewModelSystem::LoadModel path model {}"sv, path);
-	
-	RE::BSModelDB::DBTraits::ArgsType args{};
-	args.loadTextures = true;
-	args.createFadeNode = true;
-
-	auto result = RE::BSModelDB::Demand(path.c_str(), &loadedModel, args);
-	REX::DEBUG("mePreviewModelSystem::LoadModel result {}"sv, std::to_underlying(result));
-
-	if ((result != RE::BSResource::ErrorCode::kNone) || !loadedModel)
+	if (!DrawModel())
 	{
-		done.store(true);
+		REX::ERROR("mePreviewModelSystem::Renderer return failed when drew a model 0x{:X}", static_cast<std::uint32_t>(a_form->formID));
 		return false;
 	}
-	
-	// Update local transform and bounding spheres
-	RE::NiUpdateData updateData;
-	//updateData.time = 0.0f;
-	//updateData.flags = 0;
 
-	// Apply orientation adjustments so the model faces the camera
-	//loadedModel->local.scale = 1.0f;
-	//loadedModel->local.translate = RE::NiPoint3(0.0f, 100.0f, 0.0f); // Move forward 
-
-//	loadedModel->UpdateDownwardPass(updateData, 0);
-
-	auto renderer = RE::Interface3D::Renderer::GetByName("PipboyRenderer");
-
-//	renderer->Offscreen_Clear3D();
-	renderer->Offscreen_Enable3D(true);
-	renderer->Offscreen_Set3D(loadedModel.get());
-
-	//auto renderTargetManager = RE::BSGraphics::RenderTargetManager::GetSingleton();
-	//renderTargetManager->GetRenderTarget(0).rtView
-	
-
-	//renderer->Disable();
-	//renderer->Offscreen_Clear3D();
-	//renderer->Offscreen_Set3D(loadedModel.get());
-	//renderer->RenderPrepassesAndMenus();
-
-	//
-	//if (renderTargetManager)
-	//{
-	//	//renderTargetManager->GetRenderTarget(0);
-	//	//renderTargetManager->
-	//}
-
-	//renderer->Enable();
-
-	done.store(true);
-	return true;
+	return busy.exchange(false);
 }
