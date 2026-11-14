@@ -733,7 +733,7 @@ void meDMUIPageExplorer::DoRequestSearchItems()
 	std::thread([](meDMUIPageExplorer* a_sender) {
 		using namespace std::literals;
 
-		std::array<char, 256> buffer{};
+		char itemFormId[9];
 		REX::FTimer timer;
 		auto dataStorage = meDataStorage::GetSingleton();
 
@@ -820,8 +820,8 @@ void meDMUIPageExplorer::DoRequestSearchItems()
 
 			for (auto& item : itemList)
 			{
-				sprintf_s(buffer.data(), buffer.size(), "%08X %s", item.formId, item.name.c_str());
-				if (StrStrIA(buffer.data(), a_sender->GetTextSearchItem()))
+				sprintf_s(itemFormId, sizeof(itemFormId), "%08X", item.formId);
+				if (StrStrIA(itemFormId, a_sender->GetTextSearchItem()) || StrStrIA(item.name.c_str(), a_sender->GetTextSearchItem()))
 					itemShopList.emplace_back(item);
 			}
 		}
