@@ -329,7 +329,8 @@ void meDMUIPageExplorer::DoDrawPage()
 					dmui::ui::PushStyleColor(dmui::ui::Color::kButton, prevColor);
 				if (dmui::ui::Button(a_id.c_str()))
 				{
-					countForBuy = a_typeId == 4 ? countMinAmmoForBuy : countMinForBuy;
+					selectItemIdList = -1;
+					countForBuy = countMinForBuy;
 					selectedShopItemId.store(-1);
 					selectedShopTypeId.store(a_typeId);
 					SetSelectedShopItemId(-1);
@@ -534,8 +535,8 @@ void meDMUIPageExplorer::DoDrawPage()
 						lsExplorerPageBuyAll.GetValue()).c_str()))
 					{
 						meBasket::GetSingleton()->Append(itemShopList, countForBuy);
-						countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ? 
-							countMinAmmoForBuy : countMinForBuy;
+						/*countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ? 
+							countMinAmmoForBuy : countMinForBuy;*/
 
 						(void)GetClient()->PostNotification(DMUI_STATUS_SEVERITY_INFO,
 							lsExplorerPageToastBuy.GetValue().c_str(), 5000, lsExplorerPageToastBuyAll.GetValue().c_str());
@@ -548,8 +549,8 @@ void meDMUIPageExplorer::DoDrawPage()
 						lsExplorerPageBuy.GetValue()).c_str()))
 					{
 						meBasket::GetSingleton()->Append(itemShopList[selectItemIdList], countForBuy);
-						countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ?
-							countMinAmmoForBuy : countMinForBuy;
+						/*countForBuy = ((selectedShopTypeId.load() == 4) || itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ?
+							countMinAmmoForBuy : countMinForBuy;*/
 
 						(void)GetClient()->PostNotification(DMUI_STATUS_SEVERITY_INFO, 
 							lsExplorerPageToastBuy.GetValue().c_str(), 5000, lsExplorerPageBuy.GetValue().c_str());
@@ -562,13 +563,14 @@ void meDMUIPageExplorer::DoDrawPage()
 					if (selectItemIdList != -1 && (selectItemIdList <= itemShopList.size()) && (itemShopList[selectItemIdList].type == meItemType::kAmmoItem) ||
 						selectedShopTypeId.load() == 4)
 					{
-						countForBuy = std::max(countMinAmmoForBuy, std::min(countForBuy, countMaxAmmoForBuy));
+						countForBuy = std::max(/*countMinAmmoForBuy*/countMinForBuy, std::min(countForBuy, countMaxAmmoForBuy));
 						(void)dmui::ui::SliderScalar("##dearmodding.modexplorer.page.explorer.body.buttons.count",
-							std::addressof(countForBuy), std::addressof(countMinAmmoForBuy), std::addressof(countMaxAmmoForBuy));
+							std::addressof(countForBuy), /*std::addressof(countMinAmmoForBuy)*/
+							std::addressof(countMinForBuy), std::addressof(countMaxAmmoForBuy));
 					}
 					else
 					{
-						countForBuy = std::max(countMinForBuy, std::min(countForBuy, countMaxAmmoForBuy));
+						countForBuy = std::max(countMinForBuy, std::min(countForBuy, countMaxForBuy));
 						(void)dmui::ui::SliderScalar("##dearmodding.modexplorer.page.explorer.body.buttons.count",
 							std::addressof(countForBuy), std::addressof(countMinForBuy), std::addressof(countMaxForBuy));
 					}
