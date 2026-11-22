@@ -5,6 +5,7 @@
 #include "../mePreviewModelSystem.h"
 
 #include <DearModdingUI/Client.h>
+#include "../Other/utf8.h"
 #include <format>
 
 #include <shlwapi.h>
@@ -823,7 +824,8 @@ void meDMUIPageExplorer::DoRequestSearchItems()
 			for (auto& item : itemList)
 			{
 				sprintf_s(itemFormId, sizeof(itemFormId), "%08X", item.formId);
-				if (StrStrIA(itemFormId, a_sender->GetTextSearchItem()) || StrStrIA(item.name.c_str(), a_sender->GetTextSearchItem()))
+				if (StrStrIA(itemFormId, a_sender->GetTextSearchItem()) || 
+					utf8casestr(reinterpret_cast<const utf8_int8_t*>(item.name.c_str()), reinterpret_cast<const utf8_int8_t*>(a_sender->GetTextSearchItem())))
 					itemShopList.emplace_back(item);
 			}
 		}

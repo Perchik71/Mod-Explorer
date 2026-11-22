@@ -53,6 +53,7 @@
     <ClInclude Include="Source\meSound.h" />
     <ClInclude Include="Source\meUtils.h" />
     <ClInclude Include="Source\Host\TextureLoader.h" />
+    <ClInclude Include="Source\Other\utf8.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Resources\Mod-Explorer.rc" />
