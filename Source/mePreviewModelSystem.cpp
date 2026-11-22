@@ -12,6 +12,8 @@
 #include <RE/T/TESObjectWEAP.h>
 #include <RE/U/UI_DEPTH_PRIORITY.h>
 
+
+
 using namespace std::literals;
 
 namespace ID
@@ -66,6 +68,104 @@ void Inventory3DManager::LoadInventoryItem(RE::TESForm* a_form, RE::ExtraDataLis
 	static REL::Relocation<func_t> func{ ID::Inventory3DManager::LoadInventoryItem2 };
 	func(this, a_form, a_extras, a_unk);
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////
+
+void meRenderer::ApplyCameraFOV(RE::NiCamera* a_camera, float a_configFOV, float a_aspectOverride) noexcept
+{
+	constexpr auto M_PI = 3.14159265358979323846f;
+
+	if (!a_camera)
+		return;
+
+	const auto currentWidth = a_camera->viewFrustum.right - a_camera->viewFrustum.left;
+	const auto currentHeight = a_camera->viewFrustum.top - a_camera->viewFrustum.bottom;
+	if (std::abs(currentHeight) <= .0001f)
+		return;
+
+	const auto aspect = (a_aspectOverride > 0.f) ?
+		a_aspectOverride :
+		std::abs(currentWidth) > .0001f ?
+		std::abs(currentWidth / currentHeight) :
+		kFallbackCameraAspect;
+	const auto top = std::tanf((a_configFOV * M_PI / 180.f) * .15f);
+	const auto right = top * aspect;
+
+	a_camera->viewFrustum.left = -right;
+	a_camera->viewFrustum.right = right;
+	a_camera->viewFrustum.top = top;
+	a_camera->viewFrustum.bottom = -top;
+	a_camera->viewFrustum.ortho = false;
+	if (a_camera->viewFrustum.near > 0.f)
+		a_camera->maxFarNearRatio = a_camera->viewFrustum.far / a_camera->viewFrustum.near;
+}
+
+meRenderer::meRenderer()
+{
+}
+
+meRenderer::~meRenderer()
+{
+}
+
+float meRenderer::GetRenderWindowAspect() const noexcept
+{
+	const auto* rendererData = RE::BSGraphics::GetRendererData();
+	const auto& window = rendererData->renderWindow[0];
+	if (window.windowWidth > 0 && window.windowHeight > 0)
+		return static_cast<float>(window.windowWidth) / static_cast<float>(window.windowHeight);
+	return kFallbackCameraAspect;
+}
+
+bool meRenderer::Init() noexcept
+{
+	if (!renderer)
+	{
+		auto camera = RE::PlayerCamera::GetSingleton();
+		if (!camera)
+		{
+			REX::ERROR("mePreviewModelSystem::Init return failed. Reason PlayerCamera no init.");
+			return false;
+		}		
+
+		renderer = RE::Interface3D::Renderer::Create(RENDER_NAME, RE::UI_DEPTH_PRIORITY::kStandard3DModel, camera->worldFOV, false);
+		if (!renderer)
+		{
+			REX::ERROR("mePreviewModelSystem::Init return failed when created own renderer");
+			return false;
+		}
+
+		//REX::INFO("Interface3D renderer {}: renderer={:X}", !renderer ? "reused" : "created", &renderer);
+
+		renderer->MainScreen_SetBackgroundMode(RE::Interface3D::BackgroundMode::kLive);
+		renderer->useFullPremultAlpha = true;
+		ApplyRendererFOV(camera->worldFOV);
+		
+	}
+
+	return false;
+}
+
+void meRenderer::ApplyRendererFOV(float a_configFOV) noexcept
+{
+	if (!renderer)
+		return;
+
+	// IDA: Interface3D::Renderer::SetupCamera computes top = tan(DEG_TO_RAD * fov * 0.15).
+	// Renderer::Create only applies this while constructing new cameras, so reused named renderers
+	// need the frustum refreshed when config is reloaded.
+	const auto nativeAspect = GetRenderWindowAspect();
+	ApplyCameraFOV(renderer->pipboyAspect.get(), a_configFOV);
+	ApplyCameraFOV(renderer->nativeAspect.get(), a_configFOV, nativeAspect);
+	ApplyCameraFOV(renderer->nativeAspectLongRange.get(), a_configFOV, nativeAspect);
+}
+
+
+
+
+
+
 
 bool mePreviewModelSystem::LoadModel() noexcept
 {
@@ -164,7 +264,7 @@ bool mePreviewModelSystem::DrawModel() noexcept
 	
 
 
-	//auto camera = RE::PlayerCamera::GetSingleton();
+	//
 	//if (!camera)
 	//	REX::ERROR("mePreviewModelSystem::Init failed get camera"sv);
 	//else

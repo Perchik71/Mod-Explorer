@@ -2,11 +2,17 @@
 
 #include <REX/REX.h>
 
-#include <RE/T/TESForm.h>
+#include <RE/N/NiPoint4.h>
+#include <RE/N/NiCamera.h>
 #include <RE/N/NiPointer.h>
-#include <RE/E/ExtraDataList.h>
 #include <RE/N/NiNode.h>
 #include <RE/N/NiUpdateData.h>
+
+#include <RE/T/TESForm.h>
+
+#include <RE/E/ExtraDataList.h>
+
+
 #include <RE/I/Interface3D.h>
 #include <RE/B/BSGraphics.h>
 #include <RE/I/Inventory3DManager.h>
@@ -26,6 +32,37 @@ public:
 
 	void LoadInventoryItem(RE::TESForm* a_form, RE::ExtraDataList* a_extras, std::uint32_t a_unk) noexcept;
 };
+
+class meRenderer :
+	public REX::TSingleton<meRenderer>
+{
+private:
+	const float kFallbackCameraAspect = 16.f / 9.f;
+	const std::string_view RENDER_NAME = "ModExplorer_Preview3D";
+	
+	RE::Interface3D::Renderer* renderer{ nullptr };
+
+	
+
+
+
+	RE::NiPointer<RE::NiAVObject> displayRoot{};
+	RE::NiPoint4 appliedDisplayBounds{};
+
+	void ApplyCameraFOV(RE::NiCamera* a_camera, float a_configFOV, float a_aspectOverride = 0.0f) noexcept;
+
+public:
+	meRenderer();
+	~meRenderer();
+
+	[[nodiscard]] float GetRenderWindowAspect() const noexcept;
+	
+
+	[[nodiscard]] bool Init() noexcept;
+	void ApplyRendererFOV(float a_configFOV) noexcept;
+};
+
+
 
 class mePreviewModelSystem :
 	public REX::TSingleton<mePreviewModelSystem>
